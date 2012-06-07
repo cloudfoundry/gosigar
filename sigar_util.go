@@ -1,0 +1,18 @@
+// Copyright (c) 2012 VMware, Inc.
+
+package sigar
+
+import (
+	"unsafe"
+)
+
+func bytePtrToString(ptr *int8) string {
+	bytes := (*[10000]byte)(unsafe.Pointer(ptr))
+
+	n := 0
+	for bytes[n] != 0 {
+		n++
+	}
+
+	return string(bytes[0:n])
+}
