@@ -7,12 +7,31 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"syscall"
 )
 
 const procd = "/proc/"
+
+var system struct {
+	ticks uint64
+	btime uint64
+}
+
+func init() {
+	system.ticks = 100 // C.sysconf(C._SC_CLK_TCK)
+
+	// grab system boot time
+	readFile(procd+"stat", func(line string) bool {
+		if line[0:5] == "btime" {
+			system.btime, _ = strtoull(line[6:])
+			return false // stop reading
+		}
+		return true
+	})
+}
 
 func (self *LoadAverage) Get() error {
 	line, err := ioutil.ReadFile(procd + "loadavg")
@@ -102,6 +121,116 @@ func (self *FileSystemList) Get() error {
 	return err
 }
 
+func (self *ProcList) Get() error {
+	dir, err := os.Open(procd)
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+
+	names, err := dir.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+
+	capacity := len(names) - 64
+	list := make([]int, 0, capacity)
+
+	for _, name := range names {
+		if name[0] < '0' || name[0] > '9' {
+			continue
+		}
+		pid, err := strconv.Atoi(name)
+		if err == nil {
+			list = append(list, pid)
+		}
+	}
+
+	self.List = list
+
+	return nil
+}
+
+func (self *ProcState) Get(pid int) error {
+	contents, err := readProcFile(pid, "stat")
+	if err != nil {
+		return err
+	}
+
+	fields := strings.Fields(string(contents))
+
+	self.Name = fields[1][1 : len(fields[1])-1] // strip ()'s
+
+	self.State = RunState(fields[2][0])
+
+	self.Ppid, _ = strconv.Atoi(fields[3])
+
+	self.Tty, _ = strconv.Atoi(fields[6])
+
+	self.Priority, _ = strconv.Atoi(fields[17])
+
+	self.Nice, _ = strconv.Atoi(fields[18])
+
+	self.Processor, _ = strconv.Atoi(fields[38])
+
+	return nil
+}
+
+func (self *ProcMem) Get(pid int) error {
+	contents, err := readProcFile(pid, "statm")
+	if err != nil {
+		return err
+	}
+
+	fields := strings.Fields(string(contents))
+
+	size, _ := strtoull(fields[0])
+	self.Size = size << 12
+
+	rss, _ := strtoull(fields[1])
+	self.Resident = rss << 12
+
+	share, _ := strtoull(fields[2])
+	self.Share = share << 12
+
+	contents, err = readProcFile(pid, "stat")
+	if err != nil {
+		return err
+	}
+
+	fields = strings.Fields(string(contents))
+
+	self.MinorFaults, _ = strtoull(fields[10])
+	self.MajorFaults, _ = strtoull(fields[12])
+	self.PageFaults = self.MinorFaults + self.MajorFaults
+
+	return nil
+}
+
+func (self *ProcTime) Get(pid int) error {
+	contents, err := readProcFile(pid, "stat")
+	if err != nil {
+		return err
+	}
+
+	fields := strings.Fields(string(contents))
+
+	user, _ := strtoull(fields[13])
+	sys, _ := strtoull(fields[14])
+	// convert to millis
+	self.User = user * (1000 / system.ticks)
+	self.Sys = sys * (1000 / system.ticks)
+	self.Total = self.User + self.Sys
+
+	// convert to millis
+	self.StartTime, _ = strtoull(fields[21])
+	self.StartTime /= system.ticks
+	self.StartTime += system.btime
+	self.StartTime *= 1000
+
+	return nil
+}
+
 func parseMeminfo(table map[string]*uint64) error {
 	return readFile(procd+"meminfo", func(line string) bool {
 		fields := strings.Split(line, ":")
@@ -141,4 +270,19 @@ func readFile(file string, handler func(string) bool) error {
 
 func strtoull(val string) (uint64, error) {
 	return strconv.ParseUint(val, 10, 64)
+}
+
+func readProcFile(pid int, name string) ([]byte, error) {
+	path := procd + strconv.Itoa(pid) + "/" + name
+	contents, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		if perr, ok := err.(*os.PathError); ok {
+			if perr.Err == syscall.ENOENT {
+				return nil, syscall.ESRCH
+			}
+		}
+	}
+
+	return contents, err
 }

@@ -3,6 +3,7 @@
 package sigar
 
 import (
+	"os"
 	"testing"
 )
 
@@ -73,5 +74,71 @@ func TestFileSystemUsage(t *testing.T) {
 	err = fsusage.Get("T O T A L L Y B O G U S")
 	if err == nil {
 		t.Error("FileSystemUsage.Get should have failed")
+	}
+}
+
+func TestProcList(t *testing.T) {
+	pids := ProcList{}
+	err := pids.Get()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(pids.List) <= 2 {
+		t.Errorf("invalid ProcList %v", pids)
+	}
+
+	err = pids.Get()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+const invalidPid = 666666
+
+func TestProcState(t *testing.T) {
+	state := ProcState{}
+	err := state.Get(os.Getppid())
+	if err != nil {
+		t.Error(err)
+	}
+
+	if state.State != RunStateRun && state.State != RunStateSleep {
+		t.Error("Invalid ProcState.State '%v'", state.State)
+	}
+
+	if state.Name != "go" { // our parent is "go test"
+		t.Error("Invalid ProcState.Name '%v'", state.Name)
+	}
+
+	err = state.Get(invalidPid)
+	if err == nil {
+		t.Error("Invalid ProcState.Get('%d')", invalidPid)
+	}
+}
+
+func TestProcMem(t *testing.T) {
+	mem := ProcMem{}
+	err := mem.Get(os.Getppid())
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = mem.Get(invalidPid)
+	if err == nil {
+		t.Error("Invalid ProcMem.Get('%d')", invalidPid)
+	}
+}
+
+func TestProcTime(t *testing.T) {
+	time := ProcTime{}
+	err := time.Get(os.Getppid())
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = time.Get(invalidPid)
+	if err == nil {
+		t.Error("Invalid ProcTime.Get('%d')", invalidPid)
 	}
 }

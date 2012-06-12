@@ -45,3 +45,44 @@ type FileSystemUsage struct {
 	Files     uint64
 	FreeFiles uint64
 }
+
+type ProcList struct {
+	List []int
+}
+
+type RunState byte
+
+const (
+	RunStateSleep   = 'S'
+	RunStateRun     = 'R'
+	RunStateStop    = 'T'
+	RunStateZombie  = 'Z'
+	RunStateIdle    = 'D'
+	RunStateUnknown = '?'
+)
+
+type ProcState struct {
+	Name      string
+	State     RunState
+	Ppid      int
+	Tty       int
+	Priority  int
+	Nice      int
+	Processor int
+}
+
+type ProcMem struct {
+	Size        uint64
+	Resident    uint64
+	Share       uint64
+	MinorFaults uint64
+	MajorFaults uint64
+	PageFaults  uint64
+}
+
+type ProcTime struct {
+	StartTime uint64
+	User      uint64
+	Sys       uint64
+	Total     uint64
+}
