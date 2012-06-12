@@ -7,9 +7,10 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"time"
 )
 
-//apr_strfsize
+// Go version of apr_strfsize
 func FormatSize(size uint64) string {
 	ord := []string{"K", "M", "G", "T", "P", "E"}
 	o := 0
@@ -100,4 +101,26 @@ func (self *Uptime) Format() string {
 
 	w.Flush()
 	return buf.String()
+}
+
+func (self *ProcTime) FormatStartTime() string {
+	if self.StartTime == 0 {
+		return "00:00"
+	}
+	start := time.Unix(int64(self.StartTime)/1000, 0)
+	format := "Jan02"
+	if time.Since(start).Seconds() < (60 * 60 * 24) {
+		format = "15:04"
+	}
+	return start.Format(format)
+}
+
+func (self *ProcTime) FormatTotal() string {
+	t := self.Total / 1000
+	ss := t % 60
+	t /= 60
+	mm := t % 60
+	t /= 60
+	hh := t % 24
+	return fmt.Sprintf("%02d:%02d:%02d", hh, mm, ss)
 }
