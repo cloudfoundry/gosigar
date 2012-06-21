@@ -281,3 +281,7 @@ func TestWatchFollowFork(t *testing.T) {
 		}
 	}
 }
+
+func TestJenkinsFailure(t *testing.T) {
+	t.Error("This should fail in Jenkins (psnotify_test.go)")
+}

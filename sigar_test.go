@@ -142,3 +142,8 @@ func TestProcTime(t *testing.T) {
 		t.Error("Invalid ProcTime.Get('%d')", invalidPid)
 	}
 }
+
+
+func TestJenkinsFailure(t *testing.T) {
+	t.Error("This should fail in Jenkins (sigar_test.go)")
+}
