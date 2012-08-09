@@ -233,6 +233,29 @@ func (self *ProcTime) Get(pid int) error {
 	return nil
 }
 
+func (self *ProcArgs) Get(pid int) error {
+	contents, err := readProcFile(pid, "cmdline")
+	if err != nil {
+		return err
+	}
+
+	bbuf := bytes.NewBuffer(contents)
+
+	var args []string
+
+	for {
+		arg, err := bbuf.ReadBytes(0)
+		if err == io.EOF {
+			break
+		}
+		args = append(args, string(chop(arg)))
+	}
+
+	self.List = args
+
+	return nil
+}
+
 func parseMeminfo(table map[string]*uint64) error {
 	return readFile(procd+"meminfo", func(line string) bool {
 		fields := strings.Split(line, ":")

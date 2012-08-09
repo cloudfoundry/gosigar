@@ -142,3 +142,15 @@ func TestProcTime(t *testing.T) {
 		t.Error("Invalid ProcTime.Get('%d')", invalidPid)
 	}
 }
+
+func TestProcArgs(t *testing.T) {
+	args := ProcArgs{}
+	err := args.Get(os.Getppid())
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(args.List) < 2 {
+		t.Errorf("invalid ProcArgs %s", args.List)
+	}
+}

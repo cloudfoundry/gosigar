@@ -16,3 +16,7 @@ func bytePtrToString(ptr *int8) string {
 
 	return string(bytes[0:n])
 }
+
+func chop(buf []byte) []byte {
+	return buf[0 : len(buf)-1]
+}

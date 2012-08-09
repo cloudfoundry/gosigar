@@ -86,3 +86,7 @@ type ProcTime struct {
 	Sys       uint64
 	Total     uint64
 }
+
+type ProcArgs struct {
+	List []string
+}
