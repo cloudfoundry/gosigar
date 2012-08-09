@@ -24,6 +24,26 @@ type Swap struct {
 	Free  uint64
 }
 
+type Cpu struct {
+	User    uint64
+	Nice    uint64
+	Sys     uint64
+	Idle    uint64
+	Wait    uint64
+	Irq     uint64
+	SoftIrq uint64
+	Stolen  uint64
+}
+
+func (self *Cpu) Total() uint64 {
+	return self.User + self.Nice + self.Sys + self.Idle +
+		self.Wait + self.Irq + self.SoftIrq + self.Stolen
+}
+
+type CpuList struct {
+	List []Cpu
+}
+
 type FileSystem struct {
 	DirName     string
 	DevName     string

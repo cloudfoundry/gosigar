@@ -10,6 +10,8 @@ package sigar
 #include <mach/mach_host.h>
 #include <mach/host_info.h>
 #include <libproc.h>
+#include <mach/processor_info.h>
+#include <mach/vm_map.h>
 */
 import "C"
 
@@ -82,6 +84,80 @@ func (self *Swap) Get() error {
 	self.Total = sw_usage.Total
 	self.Used = sw_usage.Used
 	self.Free = sw_usage.Avail
+
+	return nil
+}
+
+func (self *Cpu) Get() error {
+	var count C.mach_msg_type_number_t = C.HOST_CPU_LOAD_INFO_COUNT
+	var cpuload C.host_cpu_load_info_data_t
+
+	status := C.host_statistics(C.host_t(C.mach_host_self()),
+		C.HOST_CPU_LOAD_INFO,
+		C.host_info_t(unsafe.Pointer(&cpuload)),
+		&count)
+
+	if status != C.KERN_SUCCESS {
+		return fmt.Errorf("host_statistics error=%d", status)
+	}
+
+	self.User = uint64(cpuload.cpu_ticks[C.CPU_STATE_USER])
+	self.Sys = uint64(cpuload.cpu_ticks[C.CPU_STATE_SYSTEM])
+	self.Idle = uint64(cpuload.cpu_ticks[C.CPU_STATE_IDLE])
+	self.Nice = uint64(cpuload.cpu_ticks[C.CPU_STATE_NICE])
+
+	return nil
+}
+
+func (self *CpuList) Get() error {
+	var count C.mach_msg_type_number_t
+	var cpuload *C.processor_cpu_load_info_data_t
+	var ncpu C.natural_t
+
+	status := C.host_processor_info(C.host_t(C.mach_host_self()),
+		C.PROCESSOR_CPU_LOAD_INFO,
+		&ncpu,
+		(*C.processor_info_array_t)(unsafe.Pointer(&cpuload)),
+		&count)
+
+	if status != C.KERN_SUCCESS {
+		return fmt.Errorf("host_processor_info error=%d", status)
+	}
+
+	// jump through some cgo casting hoops and ensure we properly free
+	// the memory that cpuload points to
+	target := C.vm_map_t(C.mach_task_self())
+	address := C.vm_address_t(uintptr(unsafe.Pointer(cpuload)))
+	defer C.vm_deallocate(target, address, C.vm_size_t(ncpu))
+
+	// the body of struct processor_cpu_load_info
+	// aka processor_cpu_load_info_data_t
+	var cpu_ticks [C.CPU_STATE_MAX]uint32
+
+	// copy the cpuload array to a []byte buffer
+	// where we can binary.Read the data
+	size := int(ncpu) * binary.Size(cpu_ticks)
+	buf := C.GoBytes(unsafe.Pointer(cpuload), C.int(size))
+
+	bbuf := bytes.NewBuffer(buf)
+
+	self.List = make([]Cpu, 0, ncpu)
+
+	for i := 0; i < int(ncpu); i++ {
+		cpu := Cpu{}
+
+		err := binary.Read(bbuf, binary.LittleEndian, &cpu_ticks)
+		if err != nil {
+			return err
+		}
+
+		cpu.User = uint64(cpu_ticks[C.CPU_STATE_USER])
+		cpu.Sys = uint64(cpu_ticks[C.CPU_STATE_SYSTEM])
+		cpu.Idle = uint64(cpu_ticks[C.CPU_STATE_IDLE])
+		cpu.Nice = uint64(cpu_ticks[C.CPU_STATE_NICE])
+
+		self.List = append(self.List, cpu)
+	}
 
 	return nil
 }

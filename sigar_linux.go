@@ -95,6 +95,37 @@ func (self *Swap) Get() error {
 	return nil
 }
 
+func (self *Cpu) Get() error {
+	return readFile(procd+"stat", func(line string) bool {
+		if line[0:4] == "cpu " {
+			parseCpuStat(self, line)
+			return false
+		}
+		return true
+	})
+}
+
+func (self *CpuList) Get() error {
+	capacity := len(self.List)
+	if capacity == 0 {
+		capacity = 4
+	}
+	list := make([]Cpu, 0, capacity)
+
+	err := readFile(procd+"stat", func(line string) bool {
+		if line[0:3] == "cpu" && line[3] != ' ' {
+			cpu := Cpu{}
+			parseCpuStat(&cpu, line)
+			list = append(list, cpu)
+		}
+		return true
+	})
+
+	self.List = list
+
+	return err
+}
+
 func (self *FileSystemList) Get() error {
 	capacity := len(self.List)
 	if capacity == 0 {
@@ -270,6 +301,21 @@ func parseMeminfo(table map[string]*uint64) error {
 
 		return true
 	})
+}
+
+func parseCpuStat(self *Cpu, line string) error {
+	fields := strings.Fields(line)
+
+	self.User, _ = strtoull(fields[1])
+	self.Nice, _ = strtoull(fields[2])
+	self.Sys, _ = strtoull(fields[3])
+	self.Idle, _ = strtoull(fields[4])
+	self.Wait, _ = strtoull(fields[5])
+	self.Irq, _ = strtoull(fields[6])
+	self.SoftIrq, _ = strtoull(fields[7])
+	self.Stolen, _ = strtoull(fields[8])
+
+	return nil
 }
 
 func readFile(file string, handler func(string) bool) error {

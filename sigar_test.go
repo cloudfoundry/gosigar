@@ -4,6 +4,7 @@ package sigar
 
 import (
 	"os"
+	"runtime"
 	"testing"
 )
 
@@ -49,6 +50,28 @@ func TestSwap(t *testing.T) {
 	if (swap.Used + swap.Free) > swap.Total {
 		t.Errorf("Invalid swap.Used=%d or swap.Free=%d",
 			swap.Used, swap.Free)
+	}
+}
+
+func TestCpu(t *testing.T) {
+	cpu := Cpu{}
+	err := cpu.Get()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestCpuList(t *testing.T) {
+	cpulist := CpuList{}
+	err := cpulist.Get()
+	if err != nil {
+		t.Error(err)
+	}
+	nsigar := len(cpulist.List)
+	numcpu := runtime.NumCPU()
+	if nsigar != numcpu {
+		t.Errorf("CpuList num mismatch: sigar=%d, runtime=%d",
+			nsigar, numcpu)
 	}
 }
 
