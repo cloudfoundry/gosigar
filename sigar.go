@@ -110,3 +110,9 @@ type ProcTime struct {
 type ProcArgs struct {
 	List []string
 }
+
+type ProcExe struct {
+	Name string
+	Cwd  string
+	Root string
+}

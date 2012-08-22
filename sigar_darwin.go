@@ -308,6 +308,14 @@ func (self *ProcArgs) Get(pid int) error {
 	return err
 }
 
+func (self *ProcExe) Get(pid int) error {
+	exe := func(arg string) {
+		self.Name = arg
+	}
+
+	return kern_procargs(pid, exe, nil, nil)
+}
+
 // wrapper around sysctl KERN_PROCARGS2
 // callbacks params are optional,
 // up to the caller as to which pieces of data they want

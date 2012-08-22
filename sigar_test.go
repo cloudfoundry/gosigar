@@ -4,6 +4,7 @@ package sigar
 
 import (
 	"os"
+	"path/filepath"
 	"runtime"
 	"testing"
 )
@@ -175,5 +176,17 @@ func TestProcArgs(t *testing.T) {
 
 	if len(args.List) < 2 {
 		t.Errorf("invalid ProcArgs %s", args.List)
+	}
+}
+
+func TestProcExe(t *testing.T) {
+	exe := ProcExe{}
+	err := exe.Get(os.Getppid())
+	if err != nil {
+		t.Error(err)
+	}
+
+	if filepath.Base(exe.Name) != "go" {
+		t.Errorf("Invalid ProcExe.Name '%v'", exe.Name)
 	}
 }

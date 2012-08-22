@@ -287,6 +287,26 @@ func (self *ProcArgs) Get(pid int) error {
 	return nil
 }
 
+func (self *ProcExe) Get(pid int) error {
+	fields := map[string]*string{
+		"exe":  &self.Name,
+		"cwd":  &self.Cwd,
+		"root": &self.Root,
+	}
+
+	for name, field := range fields {
+		val, err := os.Readlink(procFileName(pid, name))
+
+		if err != nil {
+			return err
+		}
+
+		*field = val
+	}
+
+	return nil
+}
+
 func parseMeminfo(table map[string]*uint64) error {
 	return readFile(procd+"meminfo", func(line string) bool {
 		fields := strings.Split(line, ":")
@@ -343,8 +363,12 @@ func strtoull(val string) (uint64, error) {
 	return strconv.ParseUint(val, 10, 64)
 }
 
+func procFileName(pid int, name string) string {
+	return procd + strconv.Itoa(pid) + "/" + name
+}
+
 func readProcFile(pid int, name string) ([]byte, error) {
-	path := procd + strconv.Itoa(pid) + "/" + name
+	path := procFileName(pid, name)
 	contents, err := ioutil.ReadFile(path)
 
 	if err != nil {
