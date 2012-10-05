@@ -126,7 +126,7 @@ func (self *CpuList) Get() error {
 
 	// jump through some cgo casting hoops and ensure we properly free
 	// the memory that cpuload points to
-	target := C.vm_map_t(C.mach_task_self())
+	target := C.vm_map_t(C.mach_task_self_)
 	address := C.vm_address_t(uintptr(unsafe.Pointer(cpuload)))
 	defer C.vm_deallocate(target, address, C.vm_size_t(ncpu))
 
