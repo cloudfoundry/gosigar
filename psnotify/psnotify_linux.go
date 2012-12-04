@@ -209,7 +209,6 @@ func (listener *netlinkListener) bind() error {
 	listener.addr = &syscall.SockaddrNetlink{
 		Family: syscall.AF_NETLINK,
 		Groups: _CN_IDX_PROC,
-		Pid:    uint32(os.Getpid()),
 	}
 
 	err = syscall.Bind(listener.sock, listener.addr)
@@ -246,7 +245,7 @@ func (listener *netlinkListener) send(op uint32) error {
 
 	pr.Data.Len = uint16(binary.Size(op))
 
-	buf := bytes.NewBuffer(make([]byte, pr.Header.Len))
+	buf := bytes.NewBuffer(make([]byte, 0, pr.Header.Len))
 	binary.Write(buf, byteOrder, pr)
 	binary.Write(buf, byteOrder, op)
 
