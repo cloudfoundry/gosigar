@@ -25,7 +25,7 @@ func init() {
 
 	// grab system boot time
 	readFile(procd+"stat", func(line string) bool {
-		if line[0:5] == "btime" {
+		if strings.HasPrefix(line, "btime") {
 			system.btime, _ = strtoull(line[6:])
 			return false // stop reading
 		}
