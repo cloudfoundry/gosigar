@@ -116,3 +116,8 @@ type ProcExe struct {
 	Cwd  string
 	Root string
 }
+
+type ProcEnv struct {
+	Environ    []string
+	MapEnviron map[string]string
+}

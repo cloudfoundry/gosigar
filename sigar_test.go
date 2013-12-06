@@ -190,3 +190,31 @@ func TestProcExe(t *testing.T) {
 		t.Errorf("Invalid ProcExe.Name '%v'", exe.Name)
 	}
 }
+
+func TestProcEnv(t *testing.T) {
+	key, value := "PWD", os.Getenv("PWD")
+	//err := os.Setenv(key, value) // it doesn't work.
+	//if err != nil {
+	//	t.Error(err)
+	//}
+	env := ProcEnv{}
+	err := env.Get(os.Getpid())
+	if err != nil {
+		t.Error(err)
+	}
+
+	if env.MapEnviron[key] != value {
+		t.Errorf("Expect Env['%s'] = %s, but got %s", key, value, env.MapEnviron[key])
+	}
+	ok := false
+	vstr := key + "=" + value
+	for _, v := range env.Environ {
+		if v == vstr {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		t.Errorf("Environ missed key:%s, value:%s", key, value)
+	}
+}
