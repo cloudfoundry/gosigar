@@ -307,6 +307,28 @@ func (self *ProcExe) Get(pid int) error {
 	return nil
 }
 
+func (self *ProcEnv) Get(pid int) error {
+	contents, err := readProcFile(pid, "environ")
+	if err != nil {
+		return err
+	}
+	var envs []string
+	var maps = make(map[string]string)
+	items := bytes.Split(contents, []byte{0})
+	for _, v := range items {
+		s := string(v)
+		index := strings.Index(s, "=")
+		if index == -1 {
+			continue
+		}
+		envs = append(envs, s)
+		maps[s[:index]] = s[index+1:]
+	}
+	self.Environ = envs
+	self.MapEnviron = maps
+	return nil
+}
+
 func parseMeminfo(table map[string]*uint64) error {
 	return readFile(procd+"meminfo", func(line string) bool {
 		fields := strings.Split(line, ":")
