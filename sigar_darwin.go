@@ -256,6 +256,9 @@ func (self *ProcState) Get(pid int) error {
 
 	self.Nice = int(info.pbsd.pbi_nice)
 
+	self.Uid = uint(info.pbsd.pbi_uid)
+	self.Gid = uint(info.pbsd.pbi_gid)
+
 	return nil
 }
 

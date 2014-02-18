@@ -135,6 +135,13 @@ func TestProcState(t *testing.T) {
 		t.Error("Invalid ProcState.Name '%v'", state.Name)
 	}
 
+	if state.Uid != uint(os.Getuid()) {
+		t.Error("ProcState.Uid mismatch: '%v' should be '%v'", state.Uid, os.Getuid())
+	}
+	if state.Gid != uint(os.Getgid()) {
+		t.Error("ProcState.Gid mismatch: '%v' should be '%v'", state.Gid, os.Getgid())
+	}
+
 	err = state.Get(invalidPid)
 	if err == nil {
 		t.Error("Invalid ProcState.Get('%d')", invalidPid)
