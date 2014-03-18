@@ -13,6 +13,8 @@ import (
 	"strings"
 	"syscall"
 )
+var mfilename = "/etc/mtab" // or "/proc/mounts" later
+var tried_procmounts bool // false
 
 const procd = "/proc/"
 
@@ -134,7 +136,7 @@ func (self *FileSystemList) Get() error {
 	}
 	fslist := make([]FileSystem, 0, capacity)
 
-	err := readFile("/etc/mtab", func(line string) bool {
+	handler := func(line string) bool {
 		fields := strings.Fields(line)
 
 		fs := FileSystem{}
@@ -146,7 +148,13 @@ func (self *FileSystemList) Get() error {
 		fslist = append(fslist, fs)
 
 		return true
-	})
+	}
+	err := readFile(mfilename, handler)
+	if err != nil && os.IsNotExist(err) && !tried_procmounts {
+		tried_procmounts = true
+		mfilename = "/proc/mounts" // hello docker, https://github.com/dotcloud/docker/issues/4064
+		err = readFile(mfilename, handler)
+	}
 
 	self.List = fslist
 
