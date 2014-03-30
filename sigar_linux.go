@@ -245,7 +245,7 @@ func parseStatus(text string, table map[string]*int) {
 			num := strings.TrimLeft(fields[1], " ")
 			num  = strings.Fields(num)[0]
 			if val, err := strtoull(num); err == nil {
-				*ptr = int(val) * 1024
+				*ptr = int(val)
 			}
 		}
 	}
