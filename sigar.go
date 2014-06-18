@@ -2,6 +2,10 @@
 
 package sigar
 
+import (
+	"time"
+)
+
 type LoadAverage struct {
 	One, Five, Fifteen float64
 }
@@ -115,4 +119,42 @@ type ProcExe struct {
 	Name string
 	Cwd  string
 	Root string
+}
+
+func CollectCpuStats(duration time.Duration) (<-chan Cpu, chan<- bool) {
+	values := make(chan Cpu)
+	stop := make(chan bool)
+
+	go func() {
+		ticker := time.NewTicker(duration)
+
+		var oldCpuUsage, cpuUsage Cpu
+
+		for {
+			select {
+			case <-ticker.C:
+				oldCpuUsage = cpuUsage
+				cpuUsage.Get()
+
+				values <- cpuUsage.delta(oldCpuUsage)
+			case <-stop:
+				return
+			}
+		}
+	}()
+
+	return values, stop
+}
+
+func (self Cpu) delta(other Cpu) Cpu {
+	return Cpu{
+		User:    self.User - other.User,
+		Nice:    self.Nice - other.Nice,
+		Sys:     self.Sys - other.Sys,
+		Idle:    self.Idle - other.Idle,
+		Wait:    self.Wait - other.Wait,
+		Irq:     self.Irq - other.Irq,
+		SoftIrq: self.SoftIrq - other.SoftIrq,
+		Stolen:  self.Stolen - other.Stolen,
+	}
 }

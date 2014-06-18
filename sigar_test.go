@@ -1,192 +1,146 @@
-// Copyright (c) 2012 VMware, Inc.
-
-package sigar
+package sigar_test
 
 import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"testing"
+	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	. "github.com/cloudfoundry/gosigar"
 )
 
-func TestLoadAverage(t *testing.T) {
-	avg := LoadAverage{}
-	if err := avg.Get(); err != nil {
-		t.Error(err)
-	}
-}
+var _ = Describe("Sigar", func() {
+	var invalidPid = 666666
 
-func TestUptime(t *testing.T) {
-	uptime := Uptime{}
-	if err := uptime.Get(); err != nil {
-		t.Error(err)
-	}
-	if uptime.Length <= 0 {
-		t.Errorf("Invalid uptime.Length=%d", uptime.Length)
-	}
-}
+	It("load average", func() {
+		avg := LoadAverage{}
+		err := avg.Get()
+		Expect(err).ToNot(HaveOccured())
+	})
 
-func TestMem(t *testing.T) {
-	mem := Mem{}
-	err := mem.Get()
-	if err != nil {
-		t.Error(err)
-	}
-	if mem.Total <= 0 {
-		t.Errorf("Invalid mem.Total=%d", mem.Total)
-	}
+	It("uptime", func() {
+		uptime := Uptime{}
+		err := uptime.Get()
+		Expect(err).ToNot(HaveOccured())
+		Expect(uptime.Length).To(BeNumerically(">", 0))
+	})
 
-	if (mem.Used + mem.Free) > mem.Total {
-		t.Errorf("Invalid mem.Used=%d or mem.Free=%d",
-			mem.Used, mem.Free)
-	}
-}
+	It("mem", func() {
+		mem := Mem{}
+		err := mem.Get()
+		Expect(err).ToNot(HaveOccured())
 
-func TestSwap(t *testing.T) {
-	swap := Swap{}
-	err := swap.Get()
-	if err != nil {
-		t.Error(err)
-	}
-	if (swap.Used + swap.Free) > swap.Total {
-		t.Errorf("Invalid swap.Used=%d or swap.Free=%d",
-			swap.Used, swap.Free)
-	}
-}
+		Expect(mem.Total).To(BeNumerically(">", 0))
+		Expect(mem.Used + mem.Free).To(BeNumerically("<=", mem.Total))
+	})
 
-func TestCpu(t *testing.T) {
-	cpu := Cpu{}
-	err := cpu.Get()
-	if err != nil {
-		t.Error(err)
-	}
-}
+	It("swap", func() {
+		swap := Swap{}
+		err := swap.Get()
+		Expect(err).ToNot(HaveOccured())
+		Expect(swap.Used + swap.Free).To(BeNumerically("<=", swap.Total))
+	})
 
-func TestCpuList(t *testing.T) {
-	cpulist := CpuList{}
-	err := cpulist.Get()
-	if err != nil {
-		t.Error(err)
-	}
-	nsigar := len(cpulist.List)
-	numcpu := runtime.NumCPU()
-	if nsigar != numcpu {
-		t.Errorf("CpuList num mismatch: sigar=%d, runtime=%d",
-			nsigar, numcpu)
-	}
-}
+	It("cpu", func() {
+		cpu := Cpu{}
+		err := cpu.Get()
+		Expect(err).ToNot(HaveOccured())
+	})
 
-func TestFileSystemList(t *testing.T) {
-	fslist := FileSystemList{}
-	err := fslist.Get()
-	if err != nil {
-		t.Error(err)
-	}
+	It("CollectCpuStats", func() {
+		cpuUsages, stop := CollectCpuStats(500 * time.Millisecond)
+		firstValue := <-cpuUsages
+		secondValue := <-cpuUsages
 
-	if len(fslist.List) <= 0 {
-		t.Error("Empty FileSystemList")
-	}
-}
+		Expect(firstValue).ToNot(Equal(secondValue))
 
-func TestFileSystemUsage(t *testing.T) {
-	fsusage := FileSystemUsage{}
-	err := fsusage.Get("/")
-	if err != nil {
-		t.Error(err)
-	}
+		stop <- true
+	})
 
-	err = fsusage.Get("T O T A L L Y B O G U S")
-	if err == nil {
-		t.Error("FileSystemUsage.Get should have failed")
-	}
-}
+	It("cpu list", func() {
+		cpulist := CpuList{}
+		err := cpulist.Get()
+		Expect(err).ToNot(HaveOccured())
 
-func TestProcList(t *testing.T) {
-	pids := ProcList{}
-	err := pids.Get()
-	if err != nil {
-		t.Error(err)
-	}
+		nsigar := len(cpulist.List)
+		numcpu := runtime.NumCPU()
+		Expect(nsigar).To(Equal(numcpu))
+	})
 
-	if len(pids.List) <= 2 {
-		t.Errorf("invalid ProcList %v", pids)
-	}
+	It("file system list", func() {
+		fslist := FileSystemList{}
+		err := fslist.Get()
+		Expect(err).ToNot(HaveOccured())
 
-	err = pids.Get()
-	if err != nil {
-		t.Error(err)
-	}
-}
+		Expect(len(fslist.List)).To(BeNumerically(">", 0))
+	})
 
-const invalidPid = 666666
+	It("file system usage", func() {
+		fsusage := FileSystemUsage{}
+		err := fsusage.Get("/")
+		Expect(err).ToNot(HaveOccured())
 
-func TestProcState(t *testing.T) {
-	state := ProcState{}
-	err := state.Get(os.Getppid())
-	if err != nil {
-		t.Error(err)
-	}
+		err = fsusage.Get("T O T A L L Y B O G U S")
+		Expect(err).To(HaveOccured())
+	})
 
-	if state.State != RunStateRun && state.State != RunStateSleep {
-		t.Error("Invalid ProcState.State '%v'", state.State)
-	}
+	It("proc list", func() {
+		pids := ProcList{}
+		err := pids.Get()
+		Expect(err).ToNot(HaveOccured())
 
-	if state.Name != "go" { // our parent is "go test"
-		t.Error("Invalid ProcState.Name '%v'", state.Name)
-	}
+		Expect(len(pids.List)).To(BeNumerically(">", 2))
 
-	err = state.Get(invalidPid)
-	if err == nil {
-		t.Error("Invalid ProcState.Get('%d')", invalidPid)
-	}
-}
+		err = pids.Get()
+		Expect(err).ToNot(HaveOccured())
+	})
 
-func TestProcMem(t *testing.T) {
-	mem := ProcMem{}
-	err := mem.Get(os.Getppid())
-	if err != nil {
-		t.Error(err)
-	}
+	It("proc state", func() {
+		state := ProcState{}
+		err := state.Get(os.Getppid())
+		Expect(err).ToNot(HaveOccured())
 
-	err = mem.Get(invalidPid)
-	if err == nil {
-		t.Error("Invalid ProcMem.Get('%d')", invalidPid)
-	}
-}
+		Expect([]RunState{RunStateRun, RunStateSleep}).To(ContainElement(state.State))
+		Expect([]string{"go", "ginkgo"}).To(ContainElement(state.Name))
 
-func TestProcTime(t *testing.T) {
-	time := ProcTime{}
-	err := time.Get(os.Getppid())
-	if err != nil {
-		t.Error(err)
-	}
+		err = state.Get(invalidPid)
+		Expect(err).To(HaveOccured())
+	})
 
-	err = time.Get(invalidPid)
-	if err == nil {
-		t.Error("Invalid ProcTime.Get('%d')", invalidPid)
-	}
-}
+	It("proc mem", func() {
+		mem := ProcMem{}
+		err := mem.Get(os.Getppid())
+		Expect(err).ToNot(HaveOccured())
 
-func TestProcArgs(t *testing.T) {
-	args := ProcArgs{}
-	err := args.Get(os.Getppid())
-	if err != nil {
-		t.Error(err)
-	}
+		err = mem.Get(invalidPid)
+		Expect(err).To(HaveOccured())
+	})
 
-	if len(args.List) < 2 {
-		t.Errorf("invalid ProcArgs %s", args.List)
-	}
-}
+	It("proc time", func() {
+		time := ProcTime{}
+		err := time.Get(os.Getppid())
+		Expect(err).ToNot(HaveOccured())
 
-func TestProcExe(t *testing.T) {
-	exe := ProcExe{}
-	err := exe.Get(os.Getppid())
-	if err != nil {
-		t.Error(err)
-	}
+		err = time.Get(invalidPid)
+		Expect(err).To(HaveOccured())
+	})
 
-	if filepath.Base(exe.Name) != "go" {
-		t.Errorf("Invalid ProcExe.Name '%v'", exe.Name)
-	}
-}
+	It("proc args", func() {
+		args := ProcArgs{}
+		err := args.Get(os.Getppid())
+		Expect(err).ToNot(HaveOccured())
+
+		Expect(len(args.List)).To(BeNumerically(">=", 2))
+	})
+
+	It("proc exe", func() {
+		exe := ProcExe{}
+		err := exe.Get(os.Getppid())
+		Expect(err).ToNot(HaveOccured())
+
+		Expect([]string{"go", "ginkgo"}).To(ContainElement(filepath.Base(exe.Name)))
+	})
+})
