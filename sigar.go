@@ -121,9 +121,9 @@ type ProcExe struct {
 	Root string
 }
 
-func CollectCpuStats(duration time.Duration) (<-chan Cpu, chan<- bool) {
+func CollectCpuStats(duration time.Duration) (<-chan Cpu, chan<- struct{}) {
 	values := make(chan Cpu)
-	stop := make(chan bool)
+	stop := make(chan struct{})
 
 	go func() {
 		ticker := time.NewTicker(duration)
@@ -136,7 +136,13 @@ func CollectCpuStats(duration time.Duration) (<-chan Cpu, chan<- bool) {
 				oldCpuUsage = cpuUsage
 				cpuUsage.Get()
 
-				values <- cpuUsage.delta(oldCpuUsage)
+				// Make sure we don't block if consumer does not read from values channel
+				// Without default the process will fail with goroutines deadlock
+				select {
+				case values <- cpuUsage.delta(oldCpuUsage):
+				default:
+				}
+
 			case <-stop:
 				return
 			}

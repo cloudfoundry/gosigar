@@ -71,7 +71,8 @@ var _ = Describe("sigarLinux", func() {
 					SoftIrq: uint64(30),
 					Stolen:  uint64(58),
 				}))
-				stop <- true
+
+				stop <- struct{}{}
 			})
 		})
 	})

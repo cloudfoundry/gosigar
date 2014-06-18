@@ -18,20 +18,20 @@ var _ = Describe("Sigar", func() {
 	It("load average", func() {
 		avg := LoadAverage{}
 		err := avg.Get()
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("uptime", func() {
 		uptime := Uptime{}
 		err := uptime.Get()
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(uptime.Length).To(BeNumerically(">", 0))
 	})
 
 	It("mem", func() {
 		mem := Mem{}
 		err := mem.Get()
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 
 		Expect(mem.Total).To(BeNumerically(">", 0))
 		Expect(mem.Used + mem.Free).To(BeNumerically("<=", mem.Total))
@@ -40,30 +40,40 @@ var _ = Describe("Sigar", func() {
 	It("swap", func() {
 		swap := Swap{}
 		err := swap.Get()
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 		Expect(swap.Used + swap.Free).To(BeNumerically("<=", swap.Total))
 	})
 
 	It("cpu", func() {
 		cpu := Cpu{}
 		err := cpu.Get()
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 	})
 
-	It("CollectCpuStats", func() {
-		cpuUsages, stop := CollectCpuStats(500 * time.Millisecond)
-		firstValue := <-cpuUsages
-		secondValue := <-cpuUsages
+	Describe("CollectCpuStats", func() {
+		It("collects values", func() {
+			cpuUsages, stop := CollectCpuStats(500 * time.Millisecond)
+			firstValue := <-cpuUsages
+			secondValue := <-cpuUsages
 
-		Expect(firstValue).ToNot(Equal(secondValue))
+			Expect(firstValue).ToNot(Equal(secondValue))
 
-		stop <- true
+			stop <- struct{}{}
+		})
+
+		It("does not block", func() {
+			_, stop := CollectCpuStats(10 * time.Millisecond)
+			time.Sleep(20 * time.Millisecond)
+			stop <- struct{}{}
+
+			Expect(stop).ToNot(BeNil())
+		})
 	})
 
 	It("cpu list", func() {
 		cpulist := CpuList{}
 		err := cpulist.Get()
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 
 		nsigar := len(cpulist.List)
 		numcpu := runtime.NumCPU()
@@ -73,7 +83,7 @@ var _ = Describe("Sigar", func() {
 	It("file system list", func() {
 		fslist := FileSystemList{}
 		err := fslist.Get()
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 
 		Expect(len(fslist.List)).To(BeNumerically(">", 0))
 	})
@@ -81,57 +91,57 @@ var _ = Describe("Sigar", func() {
 	It("file system usage", func() {
 		fsusage := FileSystemUsage{}
 		err := fsusage.Get("/")
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 
 		err = fsusage.Get("T O T A L L Y B O G U S")
-		Expect(err).To(HaveOccured())
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("proc list", func() {
 		pids := ProcList{}
 		err := pids.Get()
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 
 		Expect(len(pids.List)).To(BeNumerically(">", 2))
 
 		err = pids.Get()
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("proc state", func() {
 		state := ProcState{}
 		err := state.Get(os.Getppid())
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 
 		Expect([]RunState{RunStateRun, RunStateSleep}).To(ContainElement(state.State))
 		Expect([]string{"go", "ginkgo"}).To(ContainElement(state.Name))
 
 		err = state.Get(invalidPid)
-		Expect(err).To(HaveOccured())
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("proc mem", func() {
 		mem := ProcMem{}
 		err := mem.Get(os.Getppid())
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 
 		err = mem.Get(invalidPid)
-		Expect(err).To(HaveOccured())
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("proc time", func() {
 		time := ProcTime{}
 		err := time.Get(os.Getppid())
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 
 		err = time.Get(invalidPid)
-		Expect(err).To(HaveOccured())
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("proc args", func() {
 		args := ProcArgs{}
 		err := args.Get(os.Getppid())
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 
 		Expect(len(args.List)).To(BeNumerically(">=", 2))
 	})
@@ -139,7 +149,7 @@ var _ = Describe("Sigar", func() {
 	It("proc exe", func() {
 		exe := ProcExe{}
 		err := exe.Get(os.Getppid())
-		Expect(err).ToNot(HaveOccured())
+		Expect(err).ToNot(HaveOccurred())
 
 		Expect([]string{"go", "ginkgo"}).To(ContainElement(filepath.Base(exe.Name)))
 	})
