@@ -51,22 +51,39 @@ var _ = Describe("Sigar", func() {
 	})
 
 	Describe("CollectCpuStats", func() {
-		It("collects values", func() {
-			cpuUsages, stop := CollectCpuStats(500 * time.Millisecond)
-			firstValue := <-cpuUsages
-			secondValue := <-cpuUsages
+		It("immediately makes first CPU usage available even though it's not very accurate", func() {
+			samplesCh, stop := CollectCpuStats(500 * time.Millisecond)
 
-			Expect(firstValue).ToNot(Equal(secondValue))
+			firstValue := <-samplesCh
+			Expect(firstValue.User).To(BeNumerically(">", 0))
+
+			stop <- struct{}{}
+		})
+
+		It("makes CPU usage delta values available", func() {
+			samplesCh, stop := CollectCpuStats(500 * time.Millisecond)
+
+			firstValue := <-samplesCh
+
+			secondValue := <-samplesCh
+			Expect(secondValue.User).To(BeNumerically("<", firstValue.User))
+
+			thirdValue := <-samplesCh
+			Expect(thirdValue).ToNot(Equal(secondValue))
 
 			stop <- struct{}{}
 		})
 
 		It("does not block", func() {
 			_, stop := CollectCpuStats(10 * time.Millisecond)
+
+			// Sleep long enough for samplesCh to fill at least 2 values
 			time.Sleep(20 * time.Millisecond)
+
 			stop <- struct{}{}
 
-			Expect(stop).ToNot(BeNil())
+			// If CollectCpuStats blocks it will never get here
+			Expect(true).To(BeTrue())
 		})
 	})
 

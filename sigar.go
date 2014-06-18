@@ -122,34 +122,41 @@ type ProcExe struct {
 }
 
 func CollectCpuStats(duration time.Duration) (<-chan Cpu, chan<- struct{}) {
-	values := make(chan Cpu)
-	stop := make(chan struct{})
+	// samplesCh is buffered to 1 value to immediately return first CPU sample
+	samplesCh := make(chan Cpu, 1)
+
+	stopCh := make(chan struct{})
 
 	go func() {
-		ticker := time.NewTicker(duration)
+		var cpuUsage Cpu
 
-		var oldCpuUsage, cpuUsage Cpu
+		// Immediately provide non-delta value.
+		// samplesCh is buffered to 1 value, so it will not block.
+		cpuUsage.Get()
+		samplesCh <- cpuUsage
+
+		ticker := time.NewTicker(duration)
 
 		for {
 			select {
 			case <-ticker.C:
-				oldCpuUsage = cpuUsage
+				previousCpuUsage := cpuUsage
+
 				cpuUsage.Get()
 
-				// Make sure we don't block if consumer does not read from values channel
-				// Without default the process will fail with goroutines deadlock
 				select {
-				case values <- cpuUsage.delta(oldCpuUsage):
+				case samplesCh <- cpuUsage.delta(previousCpuUsage):
 				default:
+					// Include default to avoid channel blocking
 				}
 
-			case <-stop:
+			case <-stopCh:
 				return
 			}
 		}
 	}()
 
-	return values, stop
+	return samplesCh, stopCh
 }
 
 func (self Cpu) delta(other Cpu) Cpu {
