@@ -9,6 +9,7 @@ type Sigar interface {
 	GetLoadAverage() (LoadAverage, error)
 	GetMem() (Mem, error)
 	GetSwap() (Swap, error)
+	GetFileSystemUsage(string) (FileSystemUsage, error)
 }
 
 type Cpu struct {

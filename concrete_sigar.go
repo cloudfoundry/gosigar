@@ -61,3 +61,9 @@ func (c *ConcreteSigar) GetSwap() (Swap, error) {
 	err := s.Get()
 	return s, err
 }
+
+func (c *ConcreteSigar) GetFileSystemUsage(path string) (FileSystemUsage, error) {
+	f := FileSystemUsage{}
+	err := f.Get(path)
+	return f, err
+}

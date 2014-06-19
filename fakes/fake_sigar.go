@@ -16,6 +16,10 @@ type FakeSigar struct {
 	Swap    sigar.Swap
 	SwapErr error
 
+	FileSystemUsage     sigar.FileSystemUsage
+	FileSystemUsageErr  error
+	FileSystemUsagePath string
+
 	CollectCpuStatsCpuCh  chan sigar.Cpu
 	CollectCpuStatsStopCh chan struct{}
 }
@@ -60,4 +64,9 @@ func (f *FakeSigar) GetMem() (sigar.Mem, error) {
 
 func (f *FakeSigar) GetSwap() (sigar.Swap, error) {
 	return f.Swap, f.SwapErr
+}
+
+func (f *FakeSigar) GetFileSystemUsage(path string) (sigar.FileSystemUsage, error) {
+	f.FileSystemUsagePath = path
+	return f.FileSystemUsage, f.FileSystemUsageErr
 }
