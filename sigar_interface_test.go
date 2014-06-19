@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,6 +13,12 @@ import (
 
 var _ = Describe("Sigar", func() {
 	var invalidPid = 666666
+
+	It("cpu", func() {
+		cpu := Cpu{}
+		err := cpu.Get()
+		Expect(err).ToNot(HaveOccurred())
+	})
 
 	It("load average", func() {
 		avg := LoadAverage{}
@@ -42,49 +47,6 @@ var _ = Describe("Sigar", func() {
 		err := swap.Get()
 		Expect(err).ToNot(HaveOccurred())
 		Expect(swap.Used + swap.Free).To(BeNumerically("<=", swap.Total))
-	})
-
-	It("cpu", func() {
-		cpu := Cpu{}
-		err := cpu.Get()
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	Describe("CollectCpuStats", func() {
-		It("immediately makes first CPU usage available even though it's not very accurate", func() {
-			samplesCh, stop := CollectCpuStats(500 * time.Millisecond)
-
-			firstValue := <-samplesCh
-			Expect(firstValue.User).To(BeNumerically(">", 0))
-
-			stop <- struct{}{}
-		})
-
-		It("makes CPU usage delta values available", func() {
-			samplesCh, stop := CollectCpuStats(500 * time.Millisecond)
-
-			firstValue := <-samplesCh
-
-			secondValue := <-samplesCh
-			Expect(secondValue.User).To(BeNumerically("<", firstValue.User))
-
-			thirdValue := <-samplesCh
-			Expect(thirdValue).ToNot(Equal(secondValue))
-
-			stop <- struct{}{}
-		})
-
-		It("does not block", func() {
-			_, stop := CollectCpuStats(10 * time.Millisecond)
-
-			// Sleep long enough for samplesCh to fill at least 2 values
-			time.Sleep(20 * time.Millisecond)
-
-			stop <- struct{}{}
-
-			// If CollectCpuStats blocks it will never get here
-			Expect(true).To(BeTrue())
-		})
 	})
 
 	It("cpu list", func() {

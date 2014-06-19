@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry/gosigar"
+	sigar "github.com/cloudfoundry/gosigar"
 )
 
 var _ = Describe("sigarLinux", func() {
@@ -44,7 +44,8 @@ var _ = Describe("sigarLinux", func() {
 
 		Describe("CollectCpuStats", func() {
 			It("collects CPU usage over time", func() {
-				cpuUsages, stop := sigar.CollectCpuStats(500 * time.Millisecond)
+				concreteSigar := &sigar.ConcreteSigar{}
+				cpuUsages, stop := concreteSigar.CollectCpuStats(500 * time.Millisecond)
 
 				Expect(<-cpuUsages).To(Equal(sigar.Cpu{
 					User:    uint64(25),
