@@ -58,4 +58,12 @@ var _ = Describe("ConcreteSigar", func() {
 
 		Expect(err).ToNot(HaveOccurred())
 	})
+
+	It("GetMem", func() {
+		mem, err := concreteSigar.GetMem()
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(mem.Total).To(BeNumerically(">", 0))
+		Expect(mem.Used + mem.Free).To(BeNumerically("<=", mem.Total))
+	})
 })

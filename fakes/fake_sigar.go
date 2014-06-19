@@ -10,6 +10,9 @@ type FakeSigar struct {
 	LoadAverage sigar.LoadAverage
 	LoadAverageErr error
 
+	Mem sigar.Mem
+	MemErr error
+
 	CollectCpuStatsCpuCh  chan sigar.Cpu
 	CollectCpuStatsStopCh chan struct{}
 }
@@ -46,4 +49,8 @@ func (f *FakeSigar) CollectCpuStats(collectionInterval time.Duration) (<-chan si
 
 func (f *FakeSigar) GetLoadAverage() (sigar.LoadAverage, error) {
 	return f.LoadAverage, f.LoadAverageErr
+}
+
+func (f *FakeSigar) GetMem() (sigar.Mem, error) {
+	return f.Mem, f.MemErr
 }

@@ -49,3 +49,9 @@ func (c *ConcreteSigar) GetLoadAverage() (LoadAverage, error) {
 	err := l.Get()
 	return l, err
 }
+
+func (c *ConcreteSigar) GetMem() (Mem, error) {
+	m := Mem{}
+	err := m.Get()
+	return m, err
+}
