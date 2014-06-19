@@ -55,3 +55,9 @@ func (c *ConcreteSigar) GetMem() (Mem, error) {
 	err := m.Get()
 	return m, err
 }
+
+func (c *ConcreteSigar) GetSwap() (Swap, error) {
+	s := Swap{}
+	err := s.Get()
+	return s, err
+}

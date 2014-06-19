@@ -11,7 +11,7 @@ import (
 
 func main() {
 	concreteSigar := sigar.ConcreteSigar{}
-	
+
 	uptime := sigar.Uptime{}
 	uptime.Get()
 	avg, err := concreteSigar.GetLoadAverage()

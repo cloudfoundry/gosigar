@@ -8,6 +8,7 @@ type Sigar interface {
 	CollectCpuStats(collectionInterval time.Duration) (<-chan Cpu, chan<- struct{})
 	GetLoadAverage() (LoadAverage, error)
 	GetMem() (Mem, error)
+	GetSwap() (Swap, error)
 }
 
 type Cpu struct {

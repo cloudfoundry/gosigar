@@ -7,11 +7,14 @@ import (
 )
 
 type FakeSigar struct {
-	LoadAverage sigar.LoadAverage
+	LoadAverage    sigar.LoadAverage
 	LoadAverageErr error
 
-	Mem sigar.Mem
+	Mem    sigar.Mem
 	MemErr error
+
+	Swap    sigar.Swap
+	SwapErr error
 
 	CollectCpuStatsCpuCh  chan sigar.Cpu
 	CollectCpuStatsStopCh chan struct{}
@@ -53,4 +56,8 @@ func (f *FakeSigar) GetLoadAverage() (sigar.LoadAverage, error) {
 
 func (f *FakeSigar) GetMem() (sigar.Mem, error) {
 	return f.Mem, f.MemErr
+}
+
+func (f *FakeSigar) GetSwap() (sigar.Swap, error) {
+	return f.Swap, f.SwapErr
 }
