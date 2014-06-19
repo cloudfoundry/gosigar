@@ -34,9 +34,6 @@ var _ = Describe("ConcreteSigar", func() {
 			secondValue := <-samplesCh
 			Expect(secondValue.User).To(BeNumerically("<", firstValue.User))
 
-			thirdValue := <-samplesCh
-			Expect(thirdValue).ToNot(Equal(secondValue))
-
 			stop <- struct{}{}
 		})
 
@@ -51,5 +48,14 @@ var _ = Describe("ConcreteSigar", func() {
 			// If CollectCpuStats blocks it will never get here
 			Expect(true).To(BeTrue())
 		})
+	})
+
+	It("GetLoadAverage", func() {
+		avg, err := concreteSigar.GetLoadAverage()
+		Expect(avg.One).ToNot(BeNil())
+		Expect(avg.Five).ToNot(BeNil())
+		Expect(avg.Fifteen).ToNot(BeNil())
+
+		Expect(err).ToNot(HaveOccurred())
 	})
 })

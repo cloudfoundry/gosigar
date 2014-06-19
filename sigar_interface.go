@@ -6,6 +6,7 @@ import (
 
 type Sigar interface {
 	CollectCpuStats(collectionInterval time.Duration) (<-chan Cpu, chan<- struct{})
+	GetLoadAverage() (LoadAverage, error)
 }
 
 type Cpu struct {

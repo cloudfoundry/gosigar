@@ -43,3 +43,9 @@ func (c *ConcreteSigar) CollectCpuStats(collectionInterval time.Duration) (<-cha
 
 	return samplesCh, stopCh
 }
+
+func (c *ConcreteSigar) GetLoadAverage() (LoadAverage, error) {
+	l := LoadAverage{}
+	err := l.Get()
+	return l, err
+}
