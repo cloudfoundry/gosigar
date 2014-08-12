@@ -90,8 +90,8 @@ func (self *Swap) Get() error {
 		return err
 	}
 
-	self.Total = sysinfo.Totalswap
-	self.Free = sysinfo.Freeswap
+	self.Total = uint64(sysinfo.Totalswap)
+	self.Free = uint64(sysinfo.Freeswap)
 	self.Used = self.Total - self.Free
 
 	return nil
