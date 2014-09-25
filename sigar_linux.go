@@ -16,18 +16,20 @@ import (
 var mfilename = "/etc/mtab" // or "/proc/mounts" later
 var tried_procmounts bool // false
 
-const procd = "/proc/"
-
 var system struct {
 	ticks uint64
 	btime uint64
 }
 
+var Procd string
+
 func init() {
 	system.ticks = 100 // C.sysconf(C._SC_CLK_TCK)
 
+	Procd = "/proc"
+
 	// grab system boot time
-	readFile(procd+"stat", func(line string) bool {
+	readFile(Procd+"/stat", func(line string) bool {
 		if strings.HasPrefix(line, "btime") {
 			system.btime, _ = strtoull(line[6:])
 			return false // stop reading
@@ -37,7 +39,7 @@ func init() {
 }
 
 func (self *LoadAverage) Get() error {
-	line, err := ioutil.ReadFile(procd + "loadavg")
+	line, err := ioutil.ReadFile(Procd + "/loadavg")
 	if err != nil {
 		return nil
 	}
@@ -99,12 +101,13 @@ func (self *Swap) Get() error {
 }
 
 func (self *Cpu) Get() error {
-	return readFile(procd+"stat", func(line string) bool {
+	return readFile(Procd+"/stat", func(line string) bool {
 		if line[0:4] == "cpu " {
 			parseCpuStat(self, line)
 			return false
 		}
 		return true
+
 	})
 }
 
@@ -115,7 +118,7 @@ func (self *CpuList) Get() error {
 	}
 	list := make([]Cpu, 0, capacity)
 
-	err := readFile(procd+"stat", func(line string) bool {
+	err := readFile(Procd+"/stat", func(line string) bool {
 		if line[0:3] == "cpu" && line[3] != ' ' {
 			cpu := Cpu{}
 			parseCpuStat(&cpu, line)
@@ -162,7 +165,7 @@ func (self *FileSystemList) Get() error {
 }
 
 func (self *ProcList) Get() error {
-	dir, err := os.Open(procd)
+	dir, err := os.Open(Procd)
 	if err != nil {
 		return err
 	}
@@ -350,7 +353,7 @@ func (self *ProcExe) Get(pid int) error {
 }
 
 func parseMeminfo(table map[string]*uint64) error {
-	return readFile(procd+"meminfo", func(line string) bool {
+	return readFile(Procd+"/meminfo", func(line string) bool {
 		fields := strings.Split(line, ":")
 
 		if ptr := table[fields[0]]; ptr != nil {
@@ -406,7 +409,7 @@ func strtoull(val string) (uint64, error) {
 }
 
 func procFileName(pid int, name string) string {
-	return procd + strconv.Itoa(pid) + "/" + name
+	return Procd + "/" + strconv.Itoa(pid) + "/" + name
 }
 
 func readProcFile(pid int, name string) ([]byte, error) {
