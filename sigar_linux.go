@@ -84,16 +84,16 @@ func (self *Mem) Get() error {
 }
 
 func (self *Swap) Get() error {
-	sysinfo := syscall.Sysinfo_t{}
+	table := map[string]*uint64{
+		"SwapTotal": &self.Total,
+		"SwapFree":  &self.Free,
+	}
 
-	if err := syscall.Sysinfo(&sysinfo); err != nil {
+	if err := parseMeminfo(table); err != nil {
 		return err
 	}
 
-	self.Total = uint64(sysinfo.Totalswap)
-	self.Free = uint64(sysinfo.Freeswap)
 	self.Used = self.Total - self.Free
-
 	return nil
 }
 
