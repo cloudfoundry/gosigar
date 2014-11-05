@@ -66,7 +66,7 @@ func (self *Uptime) Get() error {
 	return nil
 }
 
-func (self *Mem) GetExtra() (uint64, uint64, error) {
+func GetExtra(self *Mem) (uint64, uint64, error) {
 	var buffers, cached uint64
 	table := map[string]*uint64{
 		"MemTotal": &self.Total,
@@ -88,7 +88,7 @@ func (self *Mem) GetExtra() (uint64, uint64, error) {
 }
 
 func (self *Mem) Get() error {
-	_, _, err := self.GetExtra()
+	_, _, err := GetExtra(self)
 	return err
 }
 
@@ -252,7 +252,7 @@ func parseStatus(text string, table map[string]*int) {
 
 		if ptr := table[fields[0]]; ptr != nil {
 			num := strings.TrimLeft(fields[1], " ")
-			num  = strings.Fields(num)[0]
+			num = strings.Fields(num)[0]
 			if val, err := strtoull(num); err == nil {
 				*ptr = int(val)
 			}
