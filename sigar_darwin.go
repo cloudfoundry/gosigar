@@ -49,14 +49,12 @@ func (self *Uptime) Get() error {
 	return nil
 }
 
-func (self *Mem) Get() error {
-	var vmstat C.vm_statistics_data_t
-
+func (self *Mem) get(vmstat *C.vm_statistics_data_t) error {
 	if err := sysctlbyname("hw.memsize", &self.Total); err != nil {
 		return err
 	}
 
-	if err := vm_info(&vmstat); err != nil {
+	if err := vm_info(vmstat); err != nil {
 		return err
 	}
 
@@ -68,6 +66,19 @@ func (self *Mem) Get() error {
 	self.ActualUsed = self.Used - kern
 
 	return nil
+}
+
+func (self *Mem) Get() error {
+	var vmstat C.vm_statistics_data_t
+	return self.get(&vmstat)
+}
+
+func GetExtra(self *Mem) (uint64, uint64, error) {
+	var vmstat C.vm_statistics_data_t
+	if err := self.get(&vmstat); err != nil {
+		return 0, 0, err
+	}
+	return uint64(vmstat.wire_count) << 12, uint64(vmstat.active_count) << 12, nil
 }
 
 type xsw_usage struct {
