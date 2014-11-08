@@ -49,6 +49,18 @@ func (self *Uptime) Get() error {
 	return nil
 }
 
+func (self *Uptime) Get32() error {
+	tv := syscall.Timeval32{}
+
+	if err := sysctlbyname("kern.boottime", &tv); err != nil {
+		return err
+	}
+
+	self.Length = time.Since(time.Unix(int64(tv.Sec), int64(tv.Usec)*1000)).Seconds()
+
+	return nil
+}
+
 func (self *Mem) get(vmstat *C.vm_statistics_data_t) error {
 	if err := sysctlbyname("hw.memsize", &self.Total); err != nil {
 		return err
