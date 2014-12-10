@@ -94,6 +94,8 @@ var _ = Describe("Sigar", func() {
 
 		Expect([]RunState{RunStateRun, RunStateSleep}).To(ContainElement(state.State))
 		Expect([]string{"go", "ginkgo"}).To(ContainElement(state.Name))
+		Expect(uint(os.Getuid())).To(Equal(state.Uid))
+		Expect(uint(os.Getgid())).To(Equal(state.Gid))
 
 		err = state.Get(invalidPid)
 		Expect(err).To(HaveOccurred())

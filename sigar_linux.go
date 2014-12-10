@@ -5,6 +5,7 @@ package sigar
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,6 +13,9 @@ import (
 	"strings"
 	"syscall"
 )
+
+var mfilename = "/etc/mtab" // or "/proc/mounts" later
+var tried_procmounts bool   // false
 
 var system struct {
 	ticks uint64
@@ -62,7 +66,7 @@ func (self *Uptime) Get() error {
 	return nil
 }
 
-func (self *Mem) Get() error {
+func GetExtra(self *Mem) (uint64, uint64, error) {
 	var buffers, cached uint64
 	table := map[string]*uint64{
 		"MemTotal": &self.Total,
@@ -72,7 +76,7 @@ func (self *Mem) Get() error {
 	}
 
 	if err := parseMeminfo(table); err != nil {
-		return err
+		return 0, 0, err
 	}
 
 	self.Used = self.Total - self.Free
@@ -80,7 +84,12 @@ func (self *Mem) Get() error {
 	self.ActualFree = self.Free + kern
 	self.ActualUsed = self.Used - kern
 
-	return nil
+	return buffers, cached, nil
+}
+
+func (self *Mem) Get() error {
+	_, _, err := GetExtra(self)
+	return err
 }
 
 func (self *Swap) Get() error {
@@ -136,7 +145,7 @@ func (self *FileSystemList) Get() error {
 	}
 	fslist := make([]FileSystem, 0, capacity)
 
-	err := readFile("/etc/mtab", func(line string) bool {
+	handler := func(line string) bool {
 		fields := strings.Fields(line)
 
 		fs := FileSystem{}
@@ -148,7 +157,13 @@ func (self *FileSystemList) Get() error {
 		fslist = append(fslist, fs)
 
 		return true
-	})
+	}
+	err := readFile(mfilename, handler)
+	if err != nil && os.IsNotExist(err) && !tried_procmounts {
+		tried_procmounts = true
+		mfilename = "/proc/mounts" // hello docker, https://github.com/dotcloud/docker/issues/4064
+		err = readFile(mfilename, handler)
+	}
 
 	self.List = fslist
 
@@ -192,6 +207,10 @@ func (self *ProcState) Get(pid int) error {
 	if err != nil {
 		return err
 	}
+	status, err := readProcFile(pid, "status")
+	if err != nil {
+		return err
+	}
 
 	fields := strings.Fields(string(contents))
 
@@ -209,7 +228,36 @@ func (self *ProcState) Get(pid int) error {
 
 	self.Processor, _ = strconv.Atoi(fields[38])
 
+	uid, gid := -1, -1
+	table := map[string]*int{
+		"Uid": &uid,
+		"Gid": &gid,
+	}
+	parseStatus(string(status), table)
+	if uid == -1 {
+		return errors.New("This is UNEXPECTED: No \"Uid:\" record in proc(5) status file")
+	}
+	if gid == -1 {
+		return errors.New("This is UNEXPECTED: No \"Gid:\" record in proc(5) status file")
+	}
+	self.Uid = uint(uid)
+	self.Gid = uint(gid)
+
 	return nil
+}
+
+func parseStatus(text string, table map[string]*int) {
+	for _, line := range strings.Split(text, "\n") {
+		fields := strings.Split(line, ":")
+
+		if ptr := table[fields[0]]; ptr != nil {
+			num := strings.TrimLeft(fields[1], " ")
+			num = strings.Fields(num)[0]
+			if val, err := strtoull(num); err == nil {
+				*ptr = int(val)
+			}
+		}
+	}
 }
 
 func (self *ProcMem) Get(pid int) error {
