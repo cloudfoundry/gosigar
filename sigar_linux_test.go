@@ -32,24 +32,37 @@ var _ = Describe("sigarLinux", func() {
 
 		BeforeEach(func() {
 			statFile = procd + "/stat"
-
 			cpu = sigar.Cpu{}
-
-			statContents := []byte("cpu 25 1 2 3 4 5 6 7")
-			err := ioutil.WriteFile(statFile, statContents, 0644)
-			Expect(err).ToNot(HaveOccurred())
 		})
 
 		Describe("Get", func() {
 			It("gets CPU usage", func() {
-				err := cpu.Get()
+				statContents := []byte("cpu 25 1 2 3 4 5 6 7")
+				err := ioutil.WriteFile(statFile, statContents, 0644)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = cpu.Get()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(cpu.User).To(Equal(uint64(25)))
+			})
+
+			It("ignores empty lines", func() {
+				statContents := []byte("cpu ")
+				err := ioutil.WriteFile(statFile, statContents, 0644)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = cpu.Get()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(cpu.User).To(Equal(uint64(0)))
 			})
 		})
 
 		Describe("CollectCpuStats", func() {
 			It("collects CPU usage over time", func() {
+				statContents := []byte("cpu 25 1 2 3 4 5 6 7")
+				err := ioutil.WriteFile(statFile, statContents, 0644)
+				Expect(err).ToNot(HaveOccurred())
+
 				concreteSigar := &sigar.ConcreteSigar{}
 				cpuUsages, stop := concreteSigar.CollectCpuStats(500 * time.Millisecond)
 
@@ -64,8 +77,8 @@ var _ = Describe("sigarLinux", func() {
 					Stolen:  uint64(7),
 				}))
 
-				statContents := []byte("cpu 30 3 7 10 25 55 36 65")
-				err := ioutil.WriteFile(statFile, statContents, 0644)
+				statContents = []byte("cpu 30 3 7 10 25 55 36 65")
+				err = ioutil.WriteFile(statFile, statContents, 0644)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(<-cpuUsages).To(Equal(sigar.Cpu{
