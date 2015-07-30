@@ -370,6 +370,8 @@ func (self *SystemInfo) Get() error {
 
 		if err != nil {
 			panic(err)
+
+			return nil
 		}
 
 		if linuxVendor.Parser != nil {
