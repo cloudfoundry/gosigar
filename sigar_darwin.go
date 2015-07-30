@@ -5,7 +5,6 @@ package sigar
 /*
 #cgo LDFLAGS: -framework CoreServices
 #include <stdlib.h>
-#include <sys/utsname.h>
 #include <sys/sysctl.h>
 #include <sys/mount.h>
 #include <mach/mach_init.h>
@@ -320,6 +319,8 @@ func (self *ProcExe) Get(pid int) error {
 }
 
 func (self *SystemInfo) Get() error {
+	self.getFromUname()
+
 	self.Name = "MacOSX"
 	self.VendorName = "Mac OS X"
 	self.Vendor = "Apple"
@@ -359,14 +360,6 @@ func (self *SystemInfo) Get() error {
 	}
 
 	self.VendorCodeName = codeName
-
-	// Arch
-	var unameBuf C.struct_utsname
-	C.uname(&unameBuf)
-
-	self.Arch = C.GoString(&unameBuf.machine[0])
-	self.Machine = self.Arch
-	self.PatchLevel = "unknown"
 	self.Description = fmt.Sprintf("%s %s", self.VendorName, self.VendorCodeName)
 
 	return nil
