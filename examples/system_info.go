@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/abimaelmartell/gosigar"
+	"github.com/cloudfoundry/gosigar"
 )
 
 func main() {
