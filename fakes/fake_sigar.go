@@ -31,7 +31,7 @@ func NewFakeSigar() *FakeSigar {
 	}
 }
 
-func (f *FakeSigar) CollectCpuStats(collectionInterval time.Duration) (<-chan sigar.Cpu, chan<- struct{}) {
+func (f *FakeSigar) CollectCPUStats(collectionInterval time.Duration) (<-chan sigar.Cpu, chan<- struct{}) {
 	samplesCh := make(chan sigar.Cpu, 1)
 	stopCh := make(chan struct{})
 
