@@ -57,14 +57,14 @@ var _ = Describe("sigarLinux", func() {
 			})
 		})
 
-		Describe("CollectCpuStats", func() {
+		Describe("CollectCPUStats", func() {
 			It("collects CPU usage over time", func() {
 				statContents := []byte("cpu 25 1 2 3 4 5 6 7")
 				err := ioutil.WriteFile(statFile, statContents, 0644)
 				Expect(err).ToNot(HaveOccurred())
 
 				concreteSigar := &sigar.ConcreteSigar{}
-				cpuUsages, stop := concreteSigar.CollectCpuStats(500 * time.Millisecond)
+				cpuUsages, stop := concreteSigar.CollectCPUStats(500 * time.Millisecond)
 
 				Expect(<-cpuUsages).To(Equal(sigar.Cpu{
 					User:    uint64(25),

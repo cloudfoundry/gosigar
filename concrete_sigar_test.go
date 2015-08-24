@@ -16,9 +16,9 @@ var _ = Describe("ConcreteSigar", func() {
 		concreteSigar = &sigar.ConcreteSigar{}
 	})
 
-	Describe("CollectCpuStats", func() {
+	Describe("CollectCPUStats", func() {
 		It("immediately makes first CPU usage available even though it's not very accurate", func() {
-			samplesCh, stop := concreteSigar.CollectCpuStats(500 * time.Millisecond)
+			samplesCh, stop := concreteSigar.CollectCPUStats(500 * time.Millisecond)
 
 			firstValue := <-samplesCh
 			Expect(firstValue.User).To(BeNumerically(">", 0))
@@ -27,7 +27,7 @@ var _ = Describe("ConcreteSigar", func() {
 		})
 
 		It("makes CPU usage delta values available", func() {
-			samplesCh, stop := concreteSigar.CollectCpuStats(500 * time.Millisecond)
+			samplesCh, stop := concreteSigar.CollectCPUStats(500 * time.Millisecond)
 
 			firstValue := <-samplesCh
 
@@ -38,14 +38,14 @@ var _ = Describe("ConcreteSigar", func() {
 		})
 
 		It("does not block", func() {
-			_, stop := concreteSigar.CollectCpuStats(10 * time.Millisecond)
+			_, stop := concreteSigar.CollectCPUStats(10 * time.Millisecond)
 
 			// Sleep long enough for samplesCh to fill at least 2 values
 			time.Sleep(20 * time.Millisecond)
 
 			stop <- struct{}{}
 
-			// If CollectCpuStats blocks it will never get here
+			// If CollectCPUStats blocks it will never get here
 			Expect(true).To(BeTrue())
 		})
 	})
