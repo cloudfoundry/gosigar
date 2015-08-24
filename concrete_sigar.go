@@ -6,7 +6,7 @@ import (
 
 type ConcreteSigar struct{}
 
-func (c *ConcreteSigar) CollectCpuStats(collectionInterval time.Duration) (<-chan Cpu, chan<- struct{}) {
+func (c *ConcreteSigar) CollectCPUStats(collectionInterval time.Duration) (<-chan Cpu, chan<- struct{}) {
 	// samplesCh is buffered to 1 value to immediately return first CPU sample
 	samplesCh := make(chan Cpu, 1)
 
