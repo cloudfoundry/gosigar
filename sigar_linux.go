@@ -5,9 +5,11 @@ package sigar
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -305,6 +307,78 @@ func (self *ProcExe) Get(pid int) error {
 		}
 
 		*field = val
+	}
+
+	return nil
+}
+
+type LinuxVendor struct {
+	Name   string
+	File   string
+	Parser func(*SystemInfo, []byte) error
+}
+
+type LinuxVendors []LinuxVendor
+
+func lsbVendorParser(systemInfo *SystemInfo, releaseFileContent []byte) error {
+	regex, _ := regexp.Compile(`(\w+)="?([\w.\ ]+)"?`)
+
+	matches := regex.FindAllStringSubmatch(string(releaseFileContent), -1)
+
+	for _, v := range matches {
+		if v[1] == "DISTRIB_ID" {
+			systemInfo.Vendor = v[2]
+		}
+
+		if v[1] == "DISTRIB_RELEASE" {
+			systemInfo.VendorVersion = v[2]
+		}
+
+		if v[1] == "DISTRIB_CODENAME" {
+			systemInfo.VendorCodeName = v[2]
+		}
+	}
+
+	return nil
+}
+
+var linuxVendors = LinuxVendors{
+	{
+		Name:   "LBS",
+		File:   "/etc/lsb-release",
+		Parser: lsbVendorParser,
+	},
+}
+
+func (self *SystemInfo) Get() error {
+	self.getFromUname()
+
+	var linuxVendor LinuxVendor
+
+	for i := range linuxVendors {
+		_, err := os.Stat(linuxVendors[i].File)
+
+		if err == nil {
+			linuxVendor = linuxVendors[i]
+
+			break
+		}
+	}
+
+	if linuxVendor.File != "" {
+		releaseFileContent, err := ioutil.ReadFile(linuxVendor.File)
+
+		if err != nil {
+			panic(err)
+
+			return nil
+		}
+
+		if linuxVendor.Parser != nil {
+			linuxVendor.Parser(self, releaseFileContent)
+		}
+
+		self.Description = fmt.Sprintf("%s %s", self.Vendor, self.VendorVersion)
 	}
 
 	return nil

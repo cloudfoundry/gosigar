@@ -3,6 +3,7 @@
 package sigar
 
 /*
+#cgo LDFLAGS: -framework CoreServices
 #include <stdlib.h>
 #include <sys/sysctl.h>
 #include <sys/mount.h>
@@ -12,6 +13,7 @@ package sigar
 #include <libproc.h>
 #include <mach/processor_info.h>
 #include <mach/vm_map.h>
+#include <CoreServices/CoreServices.h>
 */
 import "C"
 
@@ -314,6 +316,53 @@ func (self *ProcExe) Get(pid int) error {
 	}
 
 	return kern_procargs(pid, exe, nil, nil)
+}
+
+func (self *SystemInfo) Get() error {
+	self.getFromUname()
+
+	self.Name = "MacOSX"
+	self.VendorName = "Mac OS X"
+	self.Vendor = "Apple"
+
+	var majorVersion, minorVersion, bugFixVersion C.SInt32
+
+	C.Gestalt(C.gestaltSystemVersionMajor, &majorVersion)
+	C.Gestalt(C.gestaltSystemVersionMinor, &minorVersion)
+	C.Gestalt(C.gestaltSystemVersionBugFix, &bugFixVersion)
+
+	self.VendorVersion = fmt.Sprintf("%d.%d", majorVersion, minorVersion)
+	self.Version = fmt.Sprintf("%d.%d.%d", majorVersion, minorVersion, bugFixVersion)
+
+	var codeName string
+
+	switch majorVersion {
+	case 2:
+		codeName = "Jaguar"
+	case 3:
+		codeName = "Panther"
+	case 4:
+		codeName = "Tiger"
+	case 5:
+		codeName = "Leopard"
+	case 6:
+		codeName = "Snow Leopard"
+	case 7:
+		codeName = "Lion"
+	case 8:
+		codeName = "Mountain Lion"
+	case 9:
+		codeName = "Mavericks"
+	case 10:
+		codeName = "Yosemite"
+	default:
+		// :O
+	}
+
+	self.VendorCodeName = codeName
+	self.Description = fmt.Sprintf("%s %s", self.VendorName, self.VendorCodeName)
+
+	return nil
 }
 
 // wrapper around sysctl KERN_PROCARGS2

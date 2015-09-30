@@ -10,6 +10,7 @@ type Sigar interface {
 	GetMem() (Mem, error)
 	GetSwap() (Swap, error)
 	GetFileSystemUsage(string) (FileSystemUsage, error)
+	GetSystemInfo() (SystemInfo, error)
 }
 
 type Cpu struct {
@@ -138,4 +139,17 @@ type ProcExe struct {
 	Name string
 	Cwd  string
 	Root string
+}
+
+type SystemInfo struct {
+	Name           string
+	Version        string
+	Arch           string
+	Machine        string
+	Description    string
+	PatchLevel     string
+	Vendor         string
+	VendorVersion  string
+	VendorName     string
+	VendorCodeName string
 }

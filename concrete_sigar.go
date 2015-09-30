@@ -67,3 +67,9 @@ func (c *ConcreteSigar) GetFileSystemUsage(path string) (FileSystemUsage, error)
 	err := f.Get(path)
 	return f, err
 }
+
+func (c *ConcreteSigar) GetSystemInfo() (SystemInfo, error) {
+	s := SystemInfo{}
+	err := s.Get()
+	return s, err
+}

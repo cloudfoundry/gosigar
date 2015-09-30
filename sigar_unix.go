@@ -4,6 +4,10 @@
 
 package sigar
 
+/*
+#include <sys/utsname.h>
+*/
+import "C"
 import "syscall"
 
 func (self *FileSystemUsage) Get(path string) error {
@@ -23,4 +27,16 @@ func (self *FileSystemUsage) Get(path string) error {
 	self.FreeFiles = stat.Ffree
 
 	return nil
+}
+
+func (self *SystemInfo) getFromUname() {
+	var unameBuf C.struct_utsname
+	C.uname(&unameBuf)
+
+	self.Version = C.GoString(&unameBuf.release[0])
+	self.VendorName = C.GoString(&unameBuf.sysname[0])
+	self.Name = C.GoString(&unameBuf.sysname[0])
+	self.Machine = C.GoString(&unameBuf.machine[0])
+	self.Arch = C.GoString(&unameBuf.machine[0])
+	self.PatchLevel = "unknown"
 }
