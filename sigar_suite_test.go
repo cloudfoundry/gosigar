@@ -1,4 +1,4 @@
-package sigar_test
+package sigar
 
 import (
 	. "github.com/onsi/ginkgo"

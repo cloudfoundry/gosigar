@@ -1,4 +1,4 @@
-package sigar_test
+package sigar
 
 import (
 	"io/ioutil"
@@ -6,8 +6,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	sigar "github.com/cloudfoundry/gosigar"
 )
 
 var _ = Describe("sigarLinux", func() {
@@ -17,22 +15,22 @@ var _ = Describe("sigarLinux", func() {
 		var err error
 		procd, err = ioutil.TempDir("", "sigarTests")
 		Expect(err).ToNot(HaveOccurred())
-		sigar.Procd = procd
+		Procd = procd
 	})
 
 	AfterEach(func() {
-		sigar.Procd = "/proc"
+		Procd = "/proc"
 	})
 
 	Describe("CPU", func() {
 		var (
 			statFile string
-			cpu      sigar.Cpu
+			cpu      Cpu
 		)
 
 		BeforeEach(func() {
 			statFile = procd + "/stat"
-			cpu = sigar.Cpu{}
+			cpu = Cpu{}
 		})
 
 		Describe("Get", func() {
@@ -63,10 +61,10 @@ var _ = Describe("sigarLinux", func() {
 				err := ioutil.WriteFile(statFile, statContents, 0644)
 				Expect(err).ToNot(HaveOccurred())
 
-				concreteSigar := &sigar.ConcreteSigar{}
-				cpuUsages, stop := concreteSigar.CollectCpuStats(500 * time.Millisecond)
+				concreteSigar := &ConcreteSigar{}
+				cpuUsages, stop := concreteCollectCpuStats(500 * time.Millisecond)
 
-				Expect(<-cpuUsages).To(Equal(sigar.Cpu{
+				Expect(<-cpuUsages).To(Equal(Cpu{
 					User:    uint64(25),
 					Nice:    uint64(1),
 					Sys:     uint64(2),
@@ -81,7 +79,7 @@ var _ = Describe("sigarLinux", func() {
 				err = ioutil.WriteFile(statFile, statContents, 0644)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(<-cpuUsages).To(Equal(sigar.Cpu{
+				Expect(<-cpuUsages).To(Equal(Cpu{
 					User:    uint64(5),
 					Nice:    uint64(2),
 					Sys:     uint64(5),
@@ -151,7 +149,7 @@ DirectMap2M:      333824 kB
 		})
 
 		It("returns correct memory info", func() {
-			mem := sigar.Mem{}
+			mem := Mem{}
 			err := mem.Get()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -214,7 +212,7 @@ DirectMap2M:      333824 kB
 		})
 
 		It("returns correct memory info", func() {
-			swap := sigar.Swap{}
+			swap := Swap{}
 			err := swap.Get()
 			Expect(err).ToNot(HaveOccurred())
 

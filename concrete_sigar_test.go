@@ -1,12 +1,12 @@
 package sigar_test
 
 import (
+	"runtime"
 	"time"
 
+	"github.com/cloudfoundry/gosigar"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	sigar "github.com/cloudfoundry/gosigar"
 )
 
 var _ = Describe("ConcreteSigar", func() {
@@ -52,6 +52,9 @@ var _ = Describe("ConcreteSigar", func() {
 
 	It("GetLoadAverage", func() {
 		avg, err := concreteSigar.GetLoadAverage()
+		if err == sigar.ErrNotImplemented {
+			Skip("Not implemented on " + runtime.GOOS)
+		}
 		Expect(avg.One).ToNot(BeNil())
 		Expect(avg.Five).ToNot(BeNil())
 		Expect(avg.Fifteen).ToNot(BeNil())

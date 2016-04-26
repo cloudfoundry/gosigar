@@ -1,8 +1,11 @@
 package sigar
 
 import (
+	"errors"
 	"time"
 )
+
+var ErrNotImplemented = errors.New("gosigar: not implemented")
 
 type Sigar interface {
 	CollectCpuStats(collectionInterval time.Duration) (<-chan Cpu, chan<- struct{})
