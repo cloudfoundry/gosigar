@@ -60,6 +60,7 @@ func (m *Mem) Get() error {
 	}
 	m.Total = x.TotalPhys
 	m.Free = x.AvailPhys
+	m.ActualFree = m.Free
 	m.Used = m.Total - m.Free
 	return nil
 }
