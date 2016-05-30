@@ -62,7 +62,7 @@ var _ = Describe("sigarLinux", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				concreteSigar := &ConcreteSigar{}
-				cpuUsages, stop := concreteCollectCpuStats(500 * time.Millisecond)
+				cpuUsages, stop := concreteSigar.CollectCpuStats(500 * time.Millisecond)
 
 				Expect(<-cpuUsages).To(Equal(Cpu{
 					User:    uint64(25),

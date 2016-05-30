@@ -76,7 +76,7 @@ var _ = Describe("ConcreteSigar", func() {
 		Expect(swap.Used + swap.Free).To(BeNumerically("<=", swap.Total))
 	})
 
-	It("GetSwap", func() {
+	It("GetFileSystemUsage", func() {
 		fsusage, err := concreteSigar.GetFileSystemUsage("/")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(fsusage.Total).ToNot(BeNil())
