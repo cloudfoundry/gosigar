@@ -81,9 +81,17 @@ func (self *Swap) Get() error {
 		return err
 	}
 
+	var vmstat C.vm_statistics_data_t
+
+	if err := vm_info(&vmstat); err != nil {
+		return err
+	}
+
 	self.Total = sw_usage.Total
 	self.Used = sw_usage.Used
 	self.Free = sw_usage.Avail
+	self.PageIn = uint64(vmstat.pageins)
+	self.PageOut = uint64(vmstat.pageouts)
 
 	return nil
 }
