@@ -93,6 +93,15 @@ func (self *Swap) Get() error {
 		return err
 	}
 
+	table = map[string]*uint64{
+		"pswpin":  &self.PageIn,
+		"pswpout": &self.PageOut,
+	}
+
+	if err := parseVmstat(table); err != nil {
+		return err
+	}
+
 	self.Used = self.Total - self.Free
 	return nil
 }
@@ -319,6 +328,24 @@ func parseMeminfo(table map[string]*uint64) error {
 			val, err := strtoull(strings.Fields(num)[0])
 			if err == nil {
 				*ptr = val * 1024
+			}
+		}
+
+		return true
+	})
+}
+
+func parseVmstat(table map[string]*uint64) error {
+	return readFile(Procd+"/vmstat", func(line string) bool {
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			return true
+		}
+
+		if ptr := table[fields[0]]; ptr != nil {
+			val, err := strtoull(fields[1])
+			if err == nil {
+				*ptr = val
 			}
 		}
 

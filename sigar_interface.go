@@ -61,9 +61,11 @@ type Mem struct {
 }
 
 type Swap struct {
-	Total uint64
-	Used  uint64
-	Free  uint64
+	Total   uint64
+	Used    uint64
+	Free    uint64
+	PageIn  uint64
+	PageOut uint64
 }
 
 type CpuList struct {

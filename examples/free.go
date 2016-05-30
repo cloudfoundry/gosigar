@@ -19,8 +19,8 @@ func main() {
 	mem.Get()
 	swap.Get()
 
-	fmt.Fprintf(os.Stdout, "%18s %10s %10s\n",
-		"total", "used", "free")
+	fmt.Fprintf(os.Stdout, "%18s %10s %10s %10s %10s\n",
+		"total", "used", "free", "pageins", "pageouts")
 
 	fmt.Fprintf(os.Stdout, "Mem:    %10d %10d %10d\n",
 		format(mem.Total), format(mem.Used), format(mem.Free))
@@ -28,6 +28,6 @@ func main() {
 	fmt.Fprintf(os.Stdout, "-/+ buffers/cache: %10d %10d\n",
 		format(mem.ActualUsed), format(mem.ActualFree))
 
-	fmt.Fprintf(os.Stdout, "Swap:   %10d %10d %10d\n",
-		format(swap.Total), format(swap.Used), format(swap.Free))
+	fmt.Fprintf(os.Stdout, "Swap:   %10d %10d %10d %10d %10d\n",
+		format(swap.Total), format(swap.Used), format(swap.Free), swap.PageIn, swap.PageOut)
 }

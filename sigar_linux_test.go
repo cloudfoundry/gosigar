@@ -162,7 +162,6 @@ DirectMap2M:      333824 kB
 		var meminfoFile string
 		BeforeEach(func() {
 			meminfoFile = procd + "/meminfo"
-
 			meminfoContents := `
 MemTotal:         374256 kB
 MemFree:          274460 kB
@@ -209,15 +208,141 @@ DirectMap2M:      333824 kB
 `
 			err := ioutil.WriteFile(meminfoFile, []byte(meminfoContents), 0444)
 			Expect(err).ToNot(HaveOccurred())
+
+			vmstatFile := procd + "/vmstat"
+			vmstatContents := `
+nr_free_pages 31466
+nr_alloc_batch 1465
+nr_inactive_anon 536472
+nr_active_anon 687249
+nr_inactive_file 298927
+nr_active_file 394956
+nr_unevictable 0
+nr_mlock 0
+nr_anon_pages 1223424
+nr_mapped 65499
+nr_file_pages 694556
+nr_dirty 79
+nr_writeback 0
+nr_slab_reclaimable 65066
+nr_slab_unreclaimable 8930
+nr_page_table_pages 5449
+nr_kernel_stack 603
+nr_unstable 0
+nr_bounce 0
+nr_vmscan_write 82260
+nr_vmscan_immediate_reclaim 813854
+nr_writeback_temp 0
+nr_isolated_anon 0
+nr_isolated_file 0
+nr_shmem 35
+nr_dirtied 12929751
+nr_written 8381406
+nr_pages_scanned 0
+numa_hit 320441967
+numa_miss 0
+numa_foreign 0
+numa_interleave 12968
+numa_local 320441967
+numa_other 0
+workingset_refault 82976
+workingset_activate 7538
+workingset_nodereclaim 0
+nr_anon_transparent_hugepages 1787
+nr_free_cma 0
+nr_dirty_threshold 138776
+nr_dirty_background_threshold 69388
+pgpgin 463395
+pgpgout 38650530
+pswpin 3192
+pswpout 82186
+pgalloc_dma 24
+pgalloc_dma32 132894366
+pgalloc_normal 222090800
+pgalloc_movable 0
+pgfree 355752894
+pgactivate 4748817
+pgdeactivate 2825899
+pgfault 428620784
+pgmajfault 4249
+pgrefill_dma 0
+pgrefill_dma32 311514
+pgrefill_normal 728856
+pgrefill_movable 0
+pgsteal_kswapd_dma 0
+pgsteal_kswapd_dma32 241904
+pgsteal_kswapd_normal 386047
+pgsteal_kswapd_movable 0
+pgsteal_direct_dma 0
+pgsteal_direct_dma32 63934
+pgsteal_direct_normal 228160
+pgsteal_direct_movable 0
+pgscan_kswapd_dma 0
+pgscan_kswapd_dma32 272276
+pgscan_kswapd_normal 428781
+pgscan_kswapd_movable 0
+pgscan_direct_dma 0
+pgscan_direct_dma32 66132
+pgscan_direct_normal 247084
+pgscan_direct_movable 0
+pgscan_direct_throttle 0
+zone_reclaim_failed 0
+pginodesteal 2645
+slabs_scanned 487296
+kswapd_inodesteal 26051
+kswapd_low_wmark_hit_quickly 3
+kswapd_high_wmark_hit_quickly 82
+pageoutrun 147
+allocstall 579
+pgrotated 145698
+drop_pagecache 0
+drop_slab 0
+numa_pte_updates 0
+numa_huge_pte_updates 0
+numa_hint_faults 0
+numa_hint_faults_local 0
+numa_pages_migrated 0
+pgmigrate_success 533657
+pgmigrate_fail 0
+compact_migrate_scanned 781620
+compact_free_scanned 16336029
+compact_isolated 1302183
+compact_stall 1781
+compact_fail 839
+compact_success 942
+htlb_buddy_alloc_success 0
+htlb_buddy_alloc_fail 0
+unevictable_pgs_culled 0
+unevictable_pgs_scanned 0
+unevictable_pgs_rescued 0
+unevictable_pgs_mlocked 0
+unevictable_pgs_munlocked 0
+unevictable_pgs_cleared 0
+unevictable_pgs_stranded 0
+thp_fault_alloc 8771
+thp_fault_fallback 350
+thp_collapse_alloc 2230
+thp_collapse_alloc_failed 89
+thp_split 981
+thp_zero_page_alloc 0
+thp_zero_page_alloc_failed 0
+balloon_inflate 0
+balloon_deflate 0
+balloon_migrate 0
+`
+			err = ioutil.WriteFile(vmstatFile, []byte(vmstatContents), 0444)
+			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("returns correct memory info", func() {
+		It("returns correct swap info", func() {
 			swap := Swap{}
 			err := swap.Get()
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(swap.Total).To(BeNumerically("==", 786428*1024))
 			Expect(swap.Free).To(BeNumerically("==", 786428*1024))
+			Expect(swap.PageIn).To(BeNumerically("==", 3192))
+			Expect(swap.PageOut).To(BeNumerically("==", 82186))
 		})
 	})
 })

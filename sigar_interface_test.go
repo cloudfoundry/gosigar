@@ -59,6 +59,8 @@ var _ = Describe("Sigar", func() {
 		}
 		Expect(err).ToNot(HaveOccurred())
 		Expect(swap.Used + swap.Free).To(BeNumerically("<=", swap.Total))
+		Expect(swap.PageIn).To(BeNumerically(">=", 0))
+		Expect(swap.PageOut).To(BeNumerically(">=", 0))
 	})
 
 	It("cpu list", func() {
