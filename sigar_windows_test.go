@@ -25,6 +25,7 @@ var _ = Describe("SigarWindows", func() {
 			Expect(mem.Get()).To(Succeed())
 			Expect(mem.Total).To(BeNumerically(">", 0))
 			Expect(mem.Free).To(BeNumerically(">", 0))
+			Expect(mem.ActualFree).To(BeNumerically(">", 0))
 			Expect(mem.Used).To(BeNumerically(">", 0))
 		})
 	})
