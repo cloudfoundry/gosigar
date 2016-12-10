@@ -6,6 +6,7 @@ import (
 )
 
 var ErrNotImplemented = errors.New("gosigar: not implemented")
+var ErrNotSupported = errors.New("gosigar: not supported")
 
 type Sigar interface {
 	CollectCpuStats(collectionInterval time.Duration) (<-chan Cpu, chan<- struct{})
