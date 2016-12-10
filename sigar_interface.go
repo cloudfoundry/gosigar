@@ -115,6 +115,10 @@ type ProcState struct {
 	Priority  int
 	Nice      int
 	Processor int
+	Uid       uint
+	// darwin: uid_t aka __darwin_uid_t aka __uint32_t
+	Gid       uint
+	// darwin: gid_t aka __darwin_gid_t aka __uint32_t
 }
 
 type ProcMem struct {
