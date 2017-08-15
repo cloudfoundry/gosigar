@@ -181,7 +181,7 @@ func (fs *FileSystemUsage) Get(path string) error {
 		return fmt.Errorf("FileSystemUsage (%s): %s", path, err)
 	}
 
-	m := uint64(SectorsPerCluster * BytesPerSector)
+	m := uint64(SectorsPerCluster * BytesPerSector / 1024)
 	fs.Total = uint64(TotalNumberOfClusters) * m
 	fs.Free = uint64(NumberOfFreeClusters) * m
 	fs.Avail = fs.Free
