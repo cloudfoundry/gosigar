@@ -95,7 +95,7 @@ var _ = Describe("sigarLinux", func() {
 		})
 	})
 
-	Describe("Mem", func() {
+	Describe("Mem without MemAvailable", func() {
 		var meminfoFile string
 		BeforeEach(func() {
 			meminfoFile = procd + "/meminfo"
@@ -155,6 +155,76 @@ DirectMap2M:      333824 kB
 
 			Expect(mem.Total).To(BeNumerically("==", 374256*1024))
 			Expect(mem.Free).To(BeNumerically("==", 274460*1024))
+			Expect(mem.ActualFree).To(BeNumerically("==", 322872*1024))
+			Expect(mem.ActualUsed).To(BeNumerically("==", 51384*1024))
+		})
+	})
+
+	Describe("Mem with MemAvailable", func() {
+		var meminfoFile string
+		BeforeEach(func() {
+			meminfoFile = procd + "/meminfo"
+
+			meminfoContents := `
+MemTotal:       35008180 kB
+MemFree:          487816 kB
+MemAvailable:   20913400 kB
+Buffers:          249244 kB
+Cached:          5064684 kB
+SwapCached:       158628 kB
+Active:         10974348 kB
+Inactive:        7441132 kB
+Active(anon):    7921056 kB
+Inactive(anon):  5192512 kB
+Active(file):    3053292 kB
+Inactive(file):  2248620 kB
+Unevictable:           4 kB
+Mlocked:               4 kB
+SwapTotal:      35013660 kB
+SwapFree:       33981728 kB
+Dirty:               652 kB
+Writeback:             0 kB
+AnonPages:      12975584 kB
+Mapped:           341188 kB
+Shmem:             12280 kB
+Slab:           15754916 kB
+SReclaimable:   15534604 kB
+SUnreclaim:       220312 kB
+KernelStack:       42960 kB
+PageTables:        52744 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:    52517748 kB
+Committed_AS:   22939984 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:           0 kB
+VmallocChunk:          0 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:  11448320 kB
+CmaTotal:              0 kB
+CmaFree:               0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+DirectMap4k:      667520 kB
+DirectMap2M:    34983936 kB
+`
+			err := ioutil.WriteFile(meminfoFile, []byte(meminfoContents), 0444)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("returns correct memory info", func() {
+			mem := Mem{}
+			err := mem.Get()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(mem.Total).To(BeNumerically("==", 35008180*1024))
+			Expect(mem.Free).To(BeNumerically("==", 487816*1024))
+			Expect(mem.ActualFree).To(BeNumerically("==", 20913400*1024))
+			Expect(mem.ActualUsed).To(BeNumerically("==", 14094780*1024))
 		})
 	})
 
