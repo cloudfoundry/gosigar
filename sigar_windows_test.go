@@ -3,6 +3,7 @@ package sigar
 import (
 	"os"
 	"strings"
+	"syscall"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -47,19 +48,55 @@ var _ = Describe("SigarWindows", func() {
 
 			var cpu Cpu
 			Eventually(func() uint64 {
-				cpu.Get()
+				Expect(cpu.Get()).To(Succeed())
 				return cpu.Idle
 			}, time.Second*10).Should(BeNumerically(">", old.Idle))
 
 			Eventually(func() uint64 {
-				cpu.Get()
+				Expect(cpu.Get()).To(Succeed())
 				return cpu.User
 			}, time.Second*10).Should(BeNumerically(">", old.User))
 
 			Eventually(func() uint64 {
-				cpu.Get()
+				Expect(cpu.Get()).To(Succeed())
 				return cpu.Sys
 			}, time.Second*10).Should(BeNumerically(">", old.Sys))
+		})
+	})
+
+	Describe("When DLL procs cannot be loaded", func() {
+		nilProc := func(pp **syscall.Proc) (restore func()) {
+			op := *pp
+			*pp = nil
+			return func() { *pp = op }
+		}
+
+		It("returns ErrNotSupported when GetDiskFreeSpace cannot be loaded", func() {
+			defer nilProc(&procGetDiskFreeSpace)()
+			Expect(new(FileSystemUsage).Get(os.TempDir())).To(MatchError(ErrNotSupported))
+		})
+
+		It("returns ErrNotSupported when GetSystemTimes cannot be loaded", func() {
+			defer nilProc(&procGetSystemTimes)()
+			Expect(new(Cpu).Get()).To(MatchError(ErrNotSupported))
+		})
+
+		It("returns ErrNotSupported when GetTickCount64 cannot be loaded", func() {
+			defer nilProc(&procGetTickCount64)()
+			Expect(new(Uptime).Get()).To(MatchError(ErrNotSupported))
+		})
+
+		It("returns ErrNotSupported when GlobalMemoryStatusEx cannot be loaded", func() {
+			defer nilProc(&procGlobalMemoryStatusEx)()
+			Expect(new(Mem).Get()).To(MatchError(ErrNotSupported))
+		})
+
+		// test the test
+		It("restores procs nilled in the previous test to their original value", func() {
+			Expect(procGetDiskFreeSpace).ToNot(BeNil())
+			Expect(procGetSystemTimes).ToNot(BeNil())
+			Expect(procGetTickCount64).ToNot(BeNil())
+			Expect(procGlobalMemoryStatusEx).ToNot(BeNil())
 		})
 	})
 
