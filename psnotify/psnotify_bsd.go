@@ -80,8 +80,9 @@ func (w *Watcher) readEvents() {
 			case syscall.NOTE_EXEC:
 				w.Exec <- &ProcEventExec{Pid: pid}
 			case syscall.NOTE_EXIT:
+				exit := int(ev.Data)
 				w.RemoveWatch(pid)
-				w.Exit <- &ProcEventExit{Pid: pid}
+				w.Exit <- &ProcEventExit{Pid: pid, Exit: exit}
 			}
 		}
 	}

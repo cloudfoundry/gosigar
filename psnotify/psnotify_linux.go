@@ -185,10 +185,11 @@ func (w *Watcher) handleEvent(data []byte) {
 		event := &exitProcEvent{}
 		binary.Read(buf, byteOrder, event)
 		pid := int(event.ProcessTgid)
+		exit := int(event.ExitCode)
 
 		if w.isWatching(pid, PROC_EVENT_EXIT) {
 			w.RemoveWatch(pid)
-			w.Exit <- &ProcEventExit{Pid: pid}
+			w.Exit <- &ProcEventExit{Pid: pid, Exit: exit}
 		}
 	}
 }

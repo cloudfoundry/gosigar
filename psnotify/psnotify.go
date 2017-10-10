@@ -17,7 +17,8 @@ type ProcEventExec struct {
 }
 
 type ProcEventExit struct {
-	Pid int // Pid of the process that called exit()
+	Pid  int // Pid of the process that called exit()
+	Exit int // Exit code of the process.
 }
 
 type watch struct {
