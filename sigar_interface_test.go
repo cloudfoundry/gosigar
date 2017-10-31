@@ -126,6 +126,18 @@ var _ = Describe("Sigar", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
+	It("proc cpu", func() {
+		pCpu := ProcCpu{}
+		err := pCpu.Get(os.Getppid())
+		if err == ErrNotImplemented {
+			Skip("Not implemented on " + runtime.GOOS)
+		}
+		Expect(err).ToNot(HaveOccurred())
+
+		err = pCpu.Get(invalidPid)
+		Expect(err).To(HaveOccurred())
+	})
+
 	It("proc mem", func() {
 		mem := ProcMem{}
 		err := mem.Get(os.Getppid())
