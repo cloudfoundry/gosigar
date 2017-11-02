@@ -143,7 +143,20 @@ func (self *ProcState) Get(pid int) error {
 }
 
 func (self *ProcMem) Get(pid int) error {
-	return ErrNotImplemented
+	handle, err := syscall.OpenProcess(processQueryLimitedInfoAccess|windows.PROCESS_VM_READ, false, uint32(pid))
+	if err != nil {
+		return errors.Wrapf(err, "OpenProcess failed for pid=%v", pid)
+	}
+	defer syscall.CloseHandle(handle)
+
+	counters, err := windows.GetProcessMemoryInfo(handle)
+	if err != nil {
+		return errors.Wrapf(err, "GetProcessMemoryInfo failed for pid=%v", pid)
+	}
+
+	self.Resident = uint64(counters.WorkingSetSize)
+	self.Size = uint64(counters.PrivateUsage)
+	return nil
 }
 
 func (self *ProcTime) Get(pid int) error {
