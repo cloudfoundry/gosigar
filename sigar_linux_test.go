@@ -2,10 +2,6 @@ package sigar
 
 import (
 	"io/ioutil"
-	"os"
-	"os/exec"
-	"strconv"
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -229,74 +225,6 @@ DirectMap2M:    34983936 kB
 			Expect(mem.Free).To(BeNumerically("==", 487816*1024))
 			Expect(mem.ActualFree).To(BeNumerically("==", 20913400*1024))
 			Expect(mem.ActualUsed).To(BeNumerically("==", 14094780*1024))
-		})
-	})
-
-	Describe("ProcCpu", func() {
-		var cpuGenerator *exec.Cmd
-		var noCpuGenerator *exec.Cmd
-
-		BeforeEach(func() {
-			Procd = "/proc"
-			cpuGenerator = exec.Command("cat", "/dev/zero", ">", "/dev/null")
-			if err := cpuGenerator.Start(); err != nil {
-				panic("failed to start cpu generator")
-			}
-
-			noCpuGenerator = exec.Command("cat")
-			if err := noCpuGenerator.Start(); err != nil {
-				panic("failed to start no cpu generator")
-			}
-		})
-
-		AfterEach(func() {
-			cpuGenerator.Process.Signal(os.Interrupt)
-			noCpuGenerator.Process.Signal(os.Interrupt)
-		})
-
-		It("calculates percentage and agrees with ps", func() {
-			time.Sleep(time.Second) // High CPU process needs a second to spool up
-
-			pCpu := &ProcCpu{}
-
-			cmd := exec.Command("ps", []string{"-p", strconv.Itoa(cpuGenerator.Process.Pid), "-o", "%cpu"}...)
-			output, err := cmd.CombinedOutput()
-			if err != nil {
-				panic(string(output) + err.Error())
-			}
-
-			err = pCpu.Get(cpuGenerator.Process.Pid)
-			Expect(err).ToNot(HaveOccurred())
-
-			percentString := strings.TrimSpace(strings.Split(string(output), "\n")[1])
-			percent, err := strconv.ParseFloat(percentString, 64)
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(pCpu.Percent).To(BeNumerically("~", percent/100.0, 0.1))
-		})
-
-		It("does not conflate multiple processes", func() {
-			time.Sleep(time.Second) // High CPU process needs a second to spool up
-
-			pCpu := &ProcCpu{}
-
-			err := pCpu.Get(cpuGenerator.Process.Pid)
-			Expect(err).ToNot(HaveOccurred())
-
-			cmd := exec.Command("ps", []string{"-p", strconv.Itoa(noCpuGenerator.Process.Pid), "-o", "%cpu"}...)
-			output, err := cmd.CombinedOutput()
-			if err != nil {
-				panic(string(output) + err.Error())
-			}
-
-			err = pCpu.Get(noCpuGenerator.Process.Pid)
-			Expect(err).ToNot(HaveOccurred())
-
-			percentString := strings.TrimSpace(strings.Split(string(output), "\n")[1])
-			percent, err := strconv.ParseFloat(percentString, 64)
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(pCpu.Percent).To(BeNumerically("~", percent/100.0, 0.02))
 		})
 	})
 
