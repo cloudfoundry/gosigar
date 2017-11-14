@@ -2,5 +2,5 @@
 
 set -e
 
-cd /go/src/github.com/cloudfoundry/gosigar
+cd go/src/github.com/cloudfoundry/gosigar
 bin/test-unit
