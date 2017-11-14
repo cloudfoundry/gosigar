@@ -1,0 +1,14 @@
+---
+platform: windows
+
+inputs:
+- name: gosigar
+  path: gopath/src/github.com/cloudfoundry/gosigar
+
+run:
+  path: powershell
+  args:
+  - "-ExecutionPolicy"
+  - "Bypass"
+  - "-File"
+  - gopath/src/github.com/cloudfoundry/gosigar/ci/tasks/test-unit.ps1

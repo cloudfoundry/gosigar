@@ -1,0 +1,24 @@
+---
+jobs:
+- name: test-unit
+  public: true
+  plan:
+    - get: gosigar
+      trigger: true
+    - task: test-unit
+      file: gosigar/ci/tasks/test-unit.yml
+
+- name: windows-test-unit
+  serial: true
+  plan:
+  - get: gosigar
+    trigger: true
+  - task: test-unit
+    file: gosigar/ci/tasks/test-unit-windows.yml
+
+resources:
+- name: gosigar
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/gosigar
+    branch: master

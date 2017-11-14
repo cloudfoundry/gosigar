@@ -1,0 +1,14 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: golang
+
+inputs:
+- name: gosigar
+  path: gopath/src/github.com/cloudfoundry/gosigar
+
+run:
+  path: gopath/src/github.com/cloudfoundry/gosigar/ci/tasks/test-unit.sh
