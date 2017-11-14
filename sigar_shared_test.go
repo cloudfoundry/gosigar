@@ -97,14 +97,14 @@ var _ = Describe("SigarShared", func() {
 			err := pMem.Get(memGenerator.Process.Pid)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(pMem.Resident).To(BeNumerically("~", 18000000, 5*1024*1024))
-			Expect(pMem.Size).To(BeNumerically("~", 18000000, 5*1024*1024))
+			Expect(pMem.Size).To(BeNumerically(">=", pMem.Resident))
 
 			pNoMem := &ProcMem{}
 			err = pNoMem.Get(noMemGenerator.Process.Pid)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(pNoMem.Resident).To(BeNumerically("~", 2000000, 5*1024*1024))
-			Expect(pNoMem.Size).To(BeNumerically("~", 3400000, 5*1024*1024))
+			Expect(pNoMem.Size).To(BeNumerically(">=", pNoMem.Resident))
 		})
 	})
 })
