@@ -2,4 +2,4 @@
 
 fly -t production set-pipeline \
     -p gosigar \
-    -c pipeline.yml
+    -c ci/pipeline.yml
