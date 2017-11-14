@@ -2,5 +2,6 @@
 
 set -e
 
-cd go/src/github.com/cloudfoundry/gosigar
+export GOPATH=$PWD/gopath
+cd gopath/src/github.com/cloudfoundry/gosigar
 bin/test-unit

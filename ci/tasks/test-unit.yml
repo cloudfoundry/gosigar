@@ -8,7 +8,7 @@ image_resource:
 
 inputs:
 - name: gosigar
-  path: go/src/github.com/cloudfoundry/gosigar
+  path: gopath/src/github.com/cloudfoundry/gosigar
 
 run:
-  path: go/src/github.com/cloudfoundry/gosigar/ci/tasks/test-unit.sh
+  path: gopath/src/github.com/cloudfoundry/gosigar/ci/tasks/test-unit.sh
