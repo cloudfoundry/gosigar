@@ -40,6 +40,8 @@ if (NeedsToInstallGo) {
     Write-Host "Successfully installed go version: $(go version)"
 }
 
+go.exe get github.com/onsi/ginkgo/...
+go.exe get github.com/onsi/gomega/...
 go.exe install github.com/cloudfoundry/gosigar/vendor/github.com/onsi/ginkgo/ginkgo
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error installing ginkgo"
