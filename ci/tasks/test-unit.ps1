@@ -24,6 +24,15 @@ function NeedsToInstallGo() {
     return $false
 }
 
+function NeedsToInstallGit() {
+    Write-Host "Checking if Git needs to be installed or updated..."
+    if ((Get-Command 'git.exe' -ErrorAction SilentlyContinue) -eq $null) {
+        Write-Host "Git.exe not found, Git will be installed"
+        return $true
+    }
+    return $false
+}
+
 if (NeedsToInstallGo) {
     Write-Host "Installing Go 1.8.3"
 
@@ -35,6 +44,22 @@ if (NeedsToInstallGo) {
         -Wait -PassThru
     if ($p.ExitCode -ne 0) {
         throw "Golang MSI installation process returned error code: $($p.ExitCode)"
+    }
+
+    Write-Host "Successfully installed go version: $(go version)"
+}
+
+if (NeedsToInstallGit) {
+    Write-Host "Installing git 2.15.0"
+
+    Invoke-WebRequest 'https://github.com/git-for-windows/git/releases/download/v2.15.0.windows.1/Git-2.15.0-64-bit.exe' `
+        -UseBasicParsing -OutFile git.msi
+
+    $p = Start-Process -FilePath "msiexec" `
+        -ArgumentList "/passive /norestart /i git.msi" `
+        -Wait -PassThru
+    if ($p.ExitCode -ne 0) {
+        throw "Git MSI installation process returned error code: $($p.ExitCode)"
     }
 
     Write-Host "Successfully installed go version: $(go version)"
