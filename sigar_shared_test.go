@@ -96,23 +96,15 @@ var _ = Describe("SigarShared", func() {
 
 			err := pMem.Get(memGenerator.Process.Pid)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pMem.Resident).To(BeNumerically("~", 67*1024*1024, 5*1024*1024))
-			Expect(pMem.Size).To(BeNumerically("~", 64*1024*1024, 5*1024*1024))
-		})
+			Expect(pMem.Resident).To(BeNumerically("~", 18000000, 5*1024*1024))
+			Expect(pMem.Size).To(BeNumerically("~", 18000000, 5*1024*1024))
 
-		It("does not conflate multiple processes", func() {
-			time.Sleep(time.Second) // High MEM process needs a second to spool up
-
-			pMem := &ProcMem{}
-
-			err := pMem.Get(memGenerator.Process.Pid)
+			pNoMem := &ProcMem{}
+			err = pNoMem.Get(noMemGenerator.Process.Pid)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = pMem.Get(noMemGenerator.Process.Pid)
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(pMem.Resident).To(BeNumerically("<", 6*1024*1024, 1024*1024))
-			Expect(pMem.Size).To(BeNumerically("<", 3*1024*1024, 1024*1024))
+			Expect(pNoMem.Resident).To(BeNumerically("~", 2000000, 5*1024*1024))
+			Expect(pNoMem.Size).To(BeNumerically("~", 3400000, 5*1024*1024))
 		})
 	})
 })

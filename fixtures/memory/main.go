@@ -5,16 +5,16 @@ import (
 	"time"
 )
 
-var count = flag.Int("count", 0, "how many integers to allocate")
+var count = flag.Int("count", 0, "how many bytes to allocate")
 
 func main() {
 	flag.Parse()
-	stuff := make([]int32, *count)
-	for i := int32(0); i < int32(*count); i++ {
-		stuff[i] = i
+	stuff := make([]int8, *count)
+	for i := 0; i < *count; i++ {
+		stuff[i] = int8(i % 10)
 	}
 
 	for {
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 60)
 	}
 }
