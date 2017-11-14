@@ -3,7 +3,7 @@
 main() {
   set -eu -o pipefail -x
 
-  go install github.com/cloudfoundry/gosigar/vendor/src/github.com/onsi/ginkgo/ginkgo
+  go install github.com/cloudfoundry/gosigar/vendor/github.com/onsi/ginkgo/ginkgo
 
   ginkgo -p -r -randomizeAllSpecs -randomizeSuites -keepGoing -race -skipPackage=windows
 }
