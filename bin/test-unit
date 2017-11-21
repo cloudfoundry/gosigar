@@ -1,11 +1,27 @@
 #!/bin/bash
 
+running_in_container() {
+  # look for a non-root cgroup
+  grep --quiet --invert-match ':/$' /proc/self/cgroup
+}
+
 main() {
   set -eu -o pipefail -x
 
   go install github.com/cloudfoundry/gosigar/vendor/github.com/onsi/ginkgo/ginkgo
 
-  ginkgo -p -r -randomizeAllSpecs -randomizeSuites -keepGoing -race -skipPackage=windows
+  skip_packages=""
+
+  if running_in_container; then
+    set +x
+    skip_packages="$skip_packages,psnotify"
+    echo -e "\e[33mDetected running in container."
+    echo -e "Cannot run \e[1mpsnotify\e[21m suite because of socket syscall limitations."
+    echo -e "Skipping...\e[0m"
+    set -x
+  fi
+
+  ginkgo -p -r -randomizeAllSpecs -randomizeSuites -keepGoing -race -skipPackage=$skip_packages
 }
 
 main "$@"
