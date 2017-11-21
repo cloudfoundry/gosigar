@@ -1,11 +1,10 @@
-// Copyright (c) 2012 VMware, Inc.
-
 package main
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/gosigar"
 	"os"
+
+	"github.com/cloudfoundry/gosigar"
 )
 
 const output_format = "%-15s %4s %4s %5s %4s %-15s\n"

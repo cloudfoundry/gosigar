@@ -1,11 +1,10 @@
-// Copyright (c) 2012 VMware, Inc.
-
 package main
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/gosigar"
 	"os"
+
+	"github.com/cloudfoundry/gosigar"
 )
 
 func format(val uint64) uint64 {

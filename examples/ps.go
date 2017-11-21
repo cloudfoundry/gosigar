@@ -1,9 +1,8 @@
-// Copyright (c) 2012 VMware, Inc.
-
 package main
 
 import (
 	"fmt"
+
 	"github.com/cloudfoundry/gosigar"
 )
 

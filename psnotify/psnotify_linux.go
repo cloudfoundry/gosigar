@@ -1,5 +1,3 @@
-// Copyright (c) 2012 VMware, Inc.
-
 // Go interface to the Linux netlink process connector.
 // See Documentation/connector/connector.txt in the linux kernel source tree.
 package psnotify

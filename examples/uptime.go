@@ -1,12 +1,11 @@
-// Copyright (c) 2012 VMware, Inc.
-
 package main
 
 import (
 	"fmt"
-	"github.com/cloudfoundry/gosigar"
 	"os"
 	"time"
+
+	"github.com/cloudfoundry/gosigar"
 )
 
 func main() {
