@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -18,6 +19,67 @@ type anyEvent struct {
 	execs  []int
 	errors []error
 	done   chan bool
+	m      sync.Mutex
+}
+
+func (a *anyEvent) append(eventType string, event interface{}) {
+	a.m.Lock()
+	defer a.m.Unlock()
+
+	switch eventType {
+	case "exits":
+		a.exits = append(a.exits, event.(int))
+	case "forks":
+		a.forks = append(a.forks, event.(int))
+	case "execs":
+		a.execs = append(a.execs, event.(int))
+	case "errors":
+		a.errors = append(a.errors, event.(error))
+	}
+}
+
+func (a *anyEvent) getExits() []int {
+	a.m.Lock()
+	defer a.m.Unlock()
+
+	r := make([]int, len(a.exits))
+	for i, v := range a.exits {
+		r[i] = v
+	}
+	return r
+}
+
+func (a *anyEvent) getForks() []int {
+	a.m.Lock()
+	defer a.m.Unlock()
+
+	r := make([]int, len(a.forks))
+	for i, v := range a.forks {
+		r[i] = v
+	}
+	return r
+}
+
+func (a *anyEvent) getExecs() []int {
+	a.m.Lock()
+	defer a.m.Unlock()
+
+	r := make([]int, len(a.execs))
+	for i, v := range a.execs {
+		r[i] = v
+	}
+	return r
+}
+
+func (a *anyEvent) getErrors() []error {
+	a.m.Lock()
+	defer a.m.Unlock()
+
+	r := make([]error, len(a.errors))
+	for i, v := range a.errors {
+		r[i] = v
+	}
+	return r
 }
 
 type testWatcher struct {
@@ -49,13 +111,13 @@ func newTestWatcher(t *testing.T) *testWatcher {
 			case <-events.done:
 				return
 			case ev := <-watcher.Fork:
-				events.forks = append(events.forks, ev.ParentPid)
+				events.append("forks", ev.ParentPid)
 			case ev := <-watcher.Exec:
-				events.execs = append(events.execs, ev.Pid)
+				events.append("execs", ev.Pid)
 			case ev := <-watcher.Exit:
-				events.exits = append(events.exits, ev.Pid)
+				events.append("exits", ev.Pid)
 			case err := <-watcher.Error:
-				events.errors = append(events.errors, err)
+				events.append("errors", err)
 			}
 		}
 	}()
@@ -137,12 +199,12 @@ func TestWatchFork(t *testing.T) {
 
 	tw.close()
 
-	if expectEvents(t, 1, "forks", tw.events.forks) {
-		expectEventPid(t, "fork", pid, tw.events.forks[0])
+	if expectEvents(t, 1, "forks", tw.events.getForks()) {
+		expectEventPid(t, "fork", pid, tw.events.getForks()[0])
 	}
 
-	expectEvents(t, 0, "execs", tw.events.execs)
-	expectEvents(t, 0, "exits", tw.events.exits)
+	expectEvents(t, 0, "execs", tw.events.getExecs())
+	expectEvents(t, 0, "exits", tw.events.getExits())
 }
 
 func TestWatchExit(t *testing.T) {
@@ -168,12 +230,12 @@ func TestWatchExit(t *testing.T) {
 
 	tw.close()
 
-	expectEvents(t, 0, "forks", tw.events.forks)
+	expectEvents(t, 0, "forks", tw.events.getForks())
 
-	expectEvents(t, 0, "execs", tw.events.execs)
+	expectEvents(t, 0, "execs", tw.events.getExecs())
 
-	if expectEvents(t, 1, "exits", tw.events.exits) {
-		expectEventPid(t, "exit", childPid, tw.events.exits[0])
+	if expectEvents(t, 1, "exits", tw.events.getExits()) {
+		expectEventPid(t, "exit", childPid, tw.events.getExits()[0])
 	}
 }
 
@@ -205,14 +267,14 @@ func TestWatchForkAndExit(t *testing.T) {
 
 	tw.close()
 
-	if expectEvents(t, 1, "forks", tw.events.forks) {
-		expectEventPid(t, "fork", pid, tw.events.forks[0])
+	if expectEvents(t, 1, "forks", tw.events.getForks()) {
+		expectEventPid(t, "fork", pid, tw.events.getForks()[0])
 	}
 
-	expectEvents(t, 0, "execs", tw.events.execs)
+	expectEvents(t, 0, "execs", tw.events.getExecs())
 
-	if expectEvents(t, 1, "exits", tw.events.exits) {
-		expectEventPid(t, "exit", childPid, tw.events.exits[0])
+	if expectEvents(t, 1, "exits", tw.events.getExits()) {
+		expectEventPid(t, "exit", childPid, tw.events.getExits()[0])
 	}
 }
 
@@ -263,20 +325,20 @@ func TestWatchFollowFork(t *testing.T) {
 	}
 
 	num := len(commands)
-	if expectEvents(t, num, "forks", tw.events.forks) {
-		for _, epid := range tw.events.forks {
+	if expectEvents(t, num, "forks", tw.events.getForks()) {
+		for _, epid := range tw.events.getForks() {
 			expectEventPid(t, "fork", pid, epid)
 		}
 	}
 
-	if expectEvents(t, num, "execs", tw.events.execs) {
-		for i, epid := range tw.events.execs {
+	if expectEvents(t, num, "execs", tw.events.getExecs()) {
+		for i, epid := range tw.events.getExecs() {
 			expectEventPid(t, "exec", childPids[i], epid)
 		}
 	}
 
-	if expectEvents(t, num, "exits", tw.events.exits) {
-		for i, epid := range tw.events.exits {
+	if expectEvents(t, num, "exits", tw.events.getExits()) {
+		for i, epid := range tw.events.getExits() {
 			expectEventPid(t, "exit", childPids[i], epid)
 		}
 	}

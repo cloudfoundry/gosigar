@@ -5,6 +5,7 @@ package psnotify
 import (
 	"errors"
 	"fmt"
+	"sync"
 )
 
 type ProcEventFork struct {
@@ -29,14 +30,18 @@ type eventListener interface {
 }
 
 type Watcher struct {
-	listener eventListener       // OS specifics (kqueue or netlink)
-	watches  map[int]*watch      // Map of watched process ids
-	Error    chan error          // Errors are sent on this channel
-	Fork     chan *ProcEventFork // Fork events are sent on this channel
-	Exec     chan *ProcEventExec // Exec events are sent on this channel
-	Exit     chan *ProcEventExit // Exit events are sent on this channel
-	done     chan bool           // Used to stop the readEvents() goroutine
-	isClosed bool                // Set to true when Close() is first called
+	listener     eventListener  // OS specifics (kqueue or netlink)
+	watches      map[int]*watch // Map of watched process ids
+	watchesMutex *sync.Mutex
+
+	Error chan error          // Errors are sent on this channel
+	Fork  chan *ProcEventFork // Fork events are sent on this channel
+	Exec  chan *ProcEventExec // Exec events are sent on this channel
+	Exit  chan *ProcEventExit // Exit events are sent on this channel
+	done  chan bool           // Used to stop the readEvents() goroutine
+
+	isClosed    bool // Set to true when Close() is first called
+	closedMutex *sync.Mutex
 }
 
 // Initialize event listener and channels
@@ -48,13 +53,15 @@ func NewWatcher() (*Watcher, error) {
 	}
 
 	w := &Watcher{
-		listener: listener,
-		watches:  make(map[int]*watch),
-		Fork:     make(chan *ProcEventFork),
-		Exec:     make(chan *ProcEventExec),
-		Exit:     make(chan *ProcEventExit),
-		Error:    make(chan error),
-		done:     make(chan bool, 1),
+		listener:     listener,
+		watches:      make(map[int]*watch),
+		watchesMutex: &sync.Mutex{},
+		Fork:         make(chan *ProcEventFork),
+		Exec:         make(chan *ProcEventExec),
+		Exit:         make(chan *ProcEventExit),
+		Error:        make(chan error),
+		done:         make(chan bool, 1),
+		closedMutex:  &sync.Mutex{},
 	}
 
 	go w.readEvents()
@@ -72,14 +79,20 @@ func (w *Watcher) finish() {
 // Closes the OS specific event listener,
 // removes all watches and closes all event channels.
 func (w *Watcher) Close() error {
+	w.closedMutex.Lock()
+	defer w.closedMutex.Unlock()
+
 	if w.isClosed {
 		return nil
 	}
 	w.isClosed = true
 
+	w.watchesMutex.Lock()
 	for pid := range w.watches {
-		w.RemoveWatch(pid)
+		delete(w.watches, pid)
+		w.unregister(pid)
 	}
+	w.watchesMutex.Unlock()
 
 	w.done <- true
 
@@ -92,7 +105,11 @@ func (w *Watcher) Close() error {
 // The flags param is a bitmask of process events to capture,
 // must be one or more of: PROC_EVENT_FORK, PROC_EVENT_EXEC, PROC_EVENT_EXIT
 func (w *Watcher) Watch(pid int, flags uint32) error {
-	if w.isClosed {
+	w.closedMutex.Lock()
+	closed := w.isClosed
+	w.closedMutex.Unlock()
+
+	if closed {
 		return errors.New("psnotify watcher is closed")
 	}
 
@@ -104,7 +121,10 @@ func (w *Watcher) Watch(pid int, flags uint32) error {
 		if err := w.register(pid, flags); err != nil {
 			return err
 		}
+
+		w.watchesMutex.Lock()
 		w.watches[pid] = &watch{flags: flags}
+		w.watchesMutex.Unlock()
 	}
 
 	return nil
@@ -112,6 +132,9 @@ func (w *Watcher) Watch(pid int, flags uint32) error {
 
 // Remove pid from the watched process set.
 func (w *Watcher) RemoveWatch(pid int) error {
+	w.watchesMutex.Lock()
+	defer w.watchesMutex.Unlock()
+
 	_, ok := w.watches[pid]
 	if !ok {
 		msg := fmt.Sprintf("watch for pid=%d does not exist", pid)
