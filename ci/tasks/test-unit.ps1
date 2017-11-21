@@ -47,7 +47,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-ginkgo.exe -r -race -keepGoing
+ginkgo.exe -r -race -keepGoing -skipPackage=psnotify
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Gingko returned non-zero exit code: $LASTEXITCODE"
     Write-Error $_
