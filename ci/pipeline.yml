@@ -1,4 +1,10 @@
 ---
+groups:
+- name: gosigar
+  jobs:
+  - test-unit
+  - windows-test-unit
+
 jobs:
 - name: test-unit
   public: true
@@ -6,6 +12,7 @@ jobs:
     - get: gosigar
       trigger: true
     - task: test-unit
+      privileged: true
       file: gosigar/ci/tasks/test-unit.yml
 
 - name: windows-test-unit
