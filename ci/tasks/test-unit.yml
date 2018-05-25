@@ -4,7 +4,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: golang
+    repository: golang:1
 
 inputs:
 - name: gosigar
