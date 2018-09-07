@@ -90,21 +90,31 @@ var _ = Describe("SigarShared", func() {
 		})
 
 		It("calculates memory usage", func() {
-			time.Sleep(time.Second) // High MEM process needs a second to spool up
-
 			pMem := &ProcMem{}
+			Eventually(func() uint64 {
+				err := pMem.Get(memGenerator.Process.Pid)
+				Expect(err).NotTo(HaveOccurred())
+				return pMem.Resident
+			}, 5*time.Second).Should(BeNumerically("~", 18000000, 5*1024*1024))
 
-			err := pMem.Get(memGenerator.Process.Pid)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(pMem.Resident).To(BeNumerically("~", 18000000, 5*1024*1024))
-			Expect(pMem.Size).To(BeNumerically(">=", pMem.Resident))
+			Eventually(func() uint64 {
+				err := pMem.Get(memGenerator.Process.Pid)
+				Expect(err).NotTo(HaveOccurred())
+				return pMem.Size
+			}, 5*time.Second).Should(BeNumerically(">=", pMem.Resident))
 
 			pNoMem := &ProcMem{}
-			err = pNoMem.Get(noMemGenerator.Process.Pid)
-			Expect(err).ToNot(HaveOccurred())
+			Eventually(func() uint64 {
+				err := pNoMem.Get(noMemGenerator.Process.Pid)
+				Expect(err).NotTo(HaveOccurred())
+				return pNoMem.Resident
+			}, 5*time.Second).Should(BeNumerically("~", 2000000, 5*1024*1024))
 
-			Expect(pNoMem.Resident).To(BeNumerically("~", 2000000, 5*1024*1024))
-			Expect(pNoMem.Size).To(BeNumerically(">=", pNoMem.Resident))
+			Eventually(func() uint64 {
+				err := pNoMem.Get(noMemGenerator.Process.Pid)
+				Expect(err).NotTo(HaveOccurred())
+				return pNoMem.Size
+			}, 5*time.Second).Should(BeNumerically(">=", pNoMem.Resident))
 		})
 	})
 })

@@ -54,7 +54,7 @@ var _ = Describe("SigarWindows", func() {
 			Eventually(func() uint64 {
 				cpu.Get()
 				return cpu.User
-			}, time.Second*10).Should(BeNumerically(">", old.User))
+			}, time.Second*20).Should(BeNumerically(">", old.User))
 
 			Eventually(func() uint64 {
 				cpu.Get()
