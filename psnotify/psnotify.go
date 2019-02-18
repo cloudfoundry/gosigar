@@ -101,7 +101,7 @@ func (w *Watcher) Close() error {
 	return nil
 }
 
-// Add pid to the watched process set.
+// Watch adds pid to the watched process set.
 // The flags param is a bitmask of process events to capture,
 // must be one or more of: PROC_EVENT_FORK, PROC_EVENT_EXEC, PROC_EVENT_EXIT
 func (w *Watcher) Watch(pid int, flags uint32) error {
@@ -130,7 +130,7 @@ func (w *Watcher) Watch(pid int, flags uint32) error {
 	return nil
 }
 
-// Remove pid from the watched process set.
+// RemoveWatch removes pid from the watched process set.
 func (w *Watcher) RemoveWatch(pid int) error {
 	w.watchesMutex.Lock()
 	defer w.watchesMutex.Unlock()
