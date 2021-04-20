@@ -10,7 +10,7 @@ main() {
 
   go install github.com/cloudfoundry/gosigar/vendor/github.com/onsi/ginkgo/ginkgo
 
-  skip_packages=""
+  skip_packages="windows"
 
   if running_in_container; then
     set +x
