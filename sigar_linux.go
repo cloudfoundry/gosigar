@@ -656,13 +656,25 @@ func determineControllerMounts(sysd1, sysd2 *string) {
 			*sysd2 = mpath
 			return true
 		}
-		if mtype == "cgroup" && strings.Contains(moptions, "memory") {
-			if *sysd1 != "" {
-				panic("Multiple cgroup v1 mount points")
+		if mtype == "cgroup" {
+			options := strings.Split(moptions, ",")
+			if stringSliceContains(options, "memory") {
+				if *sysd1 != "" {
+					panic("Multiple cgroup v1 mount points")
+				}
+				*sysd1 = mpath
+				return true
 			}
-			*sysd1 = mpath
-			return true
 		}
 		return true
 	})
+}
+
+func stringSliceContains(a []string, x string) bool {
+	for _, n := range a {
+		if x == n {
+			return true
+		}
+	}
+	return false
 }
