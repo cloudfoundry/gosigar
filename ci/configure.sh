@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-fly -t production set-pipeline \
+fly -t bosh-ecosystem set-pipeline \
     -p gosigar \
     -c ci/pipeline.yml

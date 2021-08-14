@@ -22,6 +22,8 @@ jobs:
     trigger: true
   - task: test-unit
     file: gosigar/ci/tasks/test-unit-windows.yml
+    tags:
+      - windows-nimbus
 
 resources:
 - name: gosigar
