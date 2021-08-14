@@ -9,14 +9,7 @@ $env:PATH = $env:GOPATH + "/bin;C:/go/bin;C:/var/vcap/bosh/bin;" + $env:PATH
 
 cd $env:GOPATH/src/github.com/cloudfoundry/gosigar
 
-go.exe install github.com/cloudfoundry/gosigar/vendor/github.com/onsi/ginkgo/ginkgo
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "Error installing ginkgo"
-    Write-Error $_
-    exit 1
-}
-
-ginkgo.exe -r -race -keepGoing -skipPackage=psnotify
+go.exe run github.com/onsi/ginkgo/ginkgo -r -race -keepGoing -skipPackage=psnotify
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Gingko returned non-zero exit code: $LASTEXITCODE"
     Write-Error $_
