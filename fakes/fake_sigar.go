@@ -10,8 +10,9 @@ type FakeSigar struct {
 	LoadAverage    sigar.LoadAverage
 	LoadAverageErr error
 
-	Mem    sigar.Mem
-	MemErr error
+	Mem                sigar.Mem
+	MemIgnoringCGroups sigar.Mem
+	MemErr             error
 
 	Swap    sigar.Swap
 	SwapErr error
@@ -60,6 +61,10 @@ func (f *FakeSigar) GetLoadAverage() (sigar.LoadAverage, error) {
 
 func (f *FakeSigar) GetMem() (sigar.Mem, error) {
 	return f.Mem, f.MemErr
+}
+
+func (f *FakeSigar) GetMemIgnoringCGroups() (sigar.Mem, error) {
+	return f.MemIgnoringCGroups, f.MemErr
 }
 
 func (f *FakeSigar) GetSwap() (sigar.Swap, error) {
