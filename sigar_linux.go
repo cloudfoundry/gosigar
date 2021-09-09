@@ -100,6 +100,14 @@ func (self *Uptime) Get() error {
 }
 
 func (self *Mem) Get() error {
+	return self.get(false)
+}
+
+func (self *Mem) GetIgnoringCGroups() error {
+	return self.get(true)
+}
+
+func (self *Mem) get(ignoreCGroups bool) error {
 	var available uint64 = MaxUint64
 	var buffers, cached uint64
 	table := map[string]*uint64{
@@ -122,6 +130,10 @@ func (self *Mem) Get() error {
 
 	self.Used = self.Total - self.Free
 	self.ActualUsed = self.Total - self.ActualFree
+
+	if ignoreCGroups {
+		return nil
+	}
 
 	// Instead of detecting if this code is run within a container
 	// or not (*), we simply attempt to retrieve the cgroup

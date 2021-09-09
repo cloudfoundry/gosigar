@@ -71,6 +71,10 @@ func (m *Mem) Get() error {
 	return nil
 }
 
+func (m *Mem) GetIgnoringCGroups() error {
+	return m.Get()
+}
+
 func (s *Swap) Get() error {
 	const MB = 1024 * 1024
 	out, err := exec.Command("wmic", "pagefile", "list", "full").Output()

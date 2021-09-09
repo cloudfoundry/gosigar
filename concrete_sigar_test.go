@@ -68,6 +68,9 @@ var _ = Describe("ConcreteSigar", func() {
 
 		Expect(mem.Total).To(BeNumerically(">", 0))
 		Expect(mem.Used + mem.Free).To(BeNumerically("<=", mem.Total))
+
+		mem, err = concreteSigar.GetMemIgnoringCGroups()
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("GetSwap", func() {

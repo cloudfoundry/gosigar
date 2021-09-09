@@ -883,6 +883,27 @@ DirectMap2M:    34983936 kB`)
 				})
 			})
 
+			Describe("When cgroups are enabled but the GetIgnoringCGroups method is called", func() {
+				// cgroup = '/user'
+				// The other tests use cgroup = '/'. This reduces the amount of changes needed
+				BeforeEach(func() {
+					cgroupSetup(`4:memory:/user`)
+					memInfoWithMemAvailable()
+					memLimitSetup2(`/user`, `21390950400`)
+					memUsageWithSwap(`/user`)
+				})
+
+				It("returns the system memory info", func() {
+					mem := Mem{}
+					err := mem.GetIgnoringCGroups()
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(mem.Total).To(BeNumerically("==", 35008180*1024))
+					Expect(mem.Free).To(BeNumerically("==", 487816*1024))
+					Expect(mem.ActualFree).To(BeNumerically("==", 20913400*1024))
+					Expect(mem.ActualUsed).To(BeNumerically("==", 14433054720))
+				})
+			})
 		})
 
 		Describe("Swap", func() {
