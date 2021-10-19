@@ -5,12 +5,7 @@ image_resource:
   type: docker-image
   source:
     repository: golang
-    # 2021-04-20: Go 1.13 is currently the oldest Go required to run Ginkgo.
-    # Because much newer versions of Go make it a huge pain to run code that hasn't been updated
-    # to Go modules, let's stick with this old version of Golang until either Ginkgo happens to pull
-    # something in that requires a gomod-requiring version of Go, or someone updates gosigar to play
-    # well go Go modules.
-    tag: 1.13
+    tag: 1.17
 
 inputs:
 - name: gosigar

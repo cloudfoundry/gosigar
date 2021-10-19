@@ -1,4 +1,4 @@
-package main
+package examples
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ func formatSize(size uint64) string {
 	return sigar.FormatSize(size * 1024)
 }
 
-func main() {
+func df() {
 	fslist := sigar.FileSystemList{}
 	fslist.Get()
 

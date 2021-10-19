@@ -1,4 +1,4 @@
-package main
+package examples
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/cloudfoundry/gosigar"
 )
 
-func main() {
+func ps() {
 	pids := sigar.ProcList{}
 	pids.Get()
 

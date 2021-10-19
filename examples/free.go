@@ -1,4 +1,4 @@
-package main
+package examples
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ func format(val uint64) uint64 {
 	return val / 1024
 }
 
-func main() {
+func free() {
 	mem := sigar.Mem{}
 	swap := sigar.Swap{}
 

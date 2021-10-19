@@ -2,7 +2,7 @@
 ## explicit
 github.com/davecgh/go-spew/spew
 # github.com/golang/protobuf v1.5.2
-## explicit
+## explicit; go 1.9
 # github.com/onsi/ginkgo v1.2.1-0.20160409220416-2c2e9bb47b4e
 ## explicit
 github.com/onsi/ginkgo
@@ -43,7 +43,7 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/pkg/errors v0.8.0
+# github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
@@ -57,8 +57,9 @@ github.com/stretchr/testify/assert
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
-# golang.org/x/sys v0.0.0-20171114162044-bf42f188b9bc
-## explicit
+# golang.org/x/sys v0.0.0-20211015200801-69063c4bb744
+## explicit; go 1.17
+golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/windows
 # golang.org/x/text v0.1.1-0.20171102192421-88f656faf3f3
 ## explicit
@@ -78,7 +79,7 @@ golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
 # gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
-## explicit
+## explicit; go 1.11
 # gopkg.in/yaml.v2 v2.0.0-20170812160011-eb3733d160e7
 ## explicit
 gopkg.in/yaml.v2
