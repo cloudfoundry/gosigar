@@ -4,6 +4,7 @@ groups:
   jobs:
   - test-unit
   - windows-test-unit
+  - bump-deps
 
 jobs:
 - name: test-unit
@@ -25,9 +26,52 @@ jobs:
     tags:
       - windows-nimbus
 
+- name: bump-deps
+  plan:
+  - in_parallel:
+    - get: gosigar
+    - get: golang-release
+    - get: weekly
+      trigger: true
+  - task: bump-deps
+    file: golang-release/ci/tasks/shared/bump-deps.yml
+    input_mapping:
+      input_repo: gosigar
+    output_mapping:
+      output_repo: bumped-gosigar
+  - in_parallel:
+    - task: test-unit
+      privileged: true
+      file: gosigar/ci/tasks/test-unit.yml
+      input_mapping:
+        gosigar: bumped-gosigar
+    - task: test-unit-windows
+      file: gosigar/ci/tasks/test-unit-windows.yml
+      input_mapping:
+        gosigar: bumped-gosigar
+      tags:
+        - windows-nimbus
+  - put: gosigar
+    params:
+      repository: bumped-gosigar
+      rebase: true
+
 resources:
 - name: gosigar
   type: git
   source:
-    uri: https://github.com/cloudfoundry/gosigar
+    uri: git@github.com:cloudfoundry/gosigar.git
     branch: master
+    private_key: ((github_deploy_key_gosigar.private_key))
+
+- name: golang-release
+  type: git
+  source:
+    uri: https://github.com/bosh-packages/golang-release.git
+
+- name: weekly
+  type: time
+  source:
+    start: 3:00 -0700
+    stop: 4:30 -0700
+    days: [ Saturday ]
