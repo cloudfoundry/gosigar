@@ -257,6 +257,10 @@ func (self *FileSystemList) Get() error {
 
 	err := readFile("/etc/mtab", func(line string) bool {
 		fields := strings.Fields(line)
+		// Ignore the fields not correct
+		if len(fields) <= 3 {
+			return true
+		}
 
 		fs := FileSystem{}
 		fs.DevName = fields[0]
