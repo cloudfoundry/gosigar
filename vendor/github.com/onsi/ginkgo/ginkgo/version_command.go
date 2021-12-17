@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+
 	"github.com/onsi/ginkgo/config"
 )
 
@@ -20,4 +21,5 @@ func BuildVersionCommand() *Command {
 
 func printVersion([]string, []string) {
 	fmt.Printf("Ginkgo Version %s\n", config.VERSION)
+	emitRCAdvertisement()
 }
