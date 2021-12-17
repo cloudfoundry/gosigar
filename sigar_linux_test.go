@@ -15,6 +15,7 @@ var procd string
 
 func setupFile(path, contents string) {
 	_ = os.MkdirAll(filepath.Dir(path), 0755)
+	_ = os.RemoveAll(path) // avoid ENOPERM when `setupFile()` is run twice in a row
 	err := ioutil.WriteFile(path, []byte(contents), 0444)
 	Expect(err).ToNot(HaveOccurred())
 }
@@ -144,6 +145,32 @@ memory2 /smart/fox/jumped/by/lazy/dog cgroup2 irrelevant,options
 				determineControllerMounts(&sys1, &sys2)
 				Expect(sys1).To(Equal("/somewhere/over/the/rainbow"))
 				Expect(sys2).To(Equal("/smart/fox/jumped/by/lazy/dog"))
+			})
+
+			When("there are multiple cgroup v1 memory controllers mounted", func() {
+				BeforeEach(func() {
+					setupFile(procd+"/self/mounts", `
+device path type options
+cgroup /sys/fs/cgroup/memory cgroup rw,nosuid,nodev,noexec,relatime,memory 0 0
+senticgroups /opt/sentinelone/cgroups/memory cgroup rw,nodev,relatime,memory 0 0
+`)
+				})
+				It("panics", func() {
+					Expect(func() { determineControllerMounts(&sys1, &sys2) }).To(PanicWith("Multiple cgroup v1 mount points"))
+				})
+			})
+
+			When("there are multiple cgroup v2 mounts", func() {
+				BeforeEach(func() {
+					setupFile(procd+"/self/mounts", `
+device path type options
+cgroup2 /sys/fs/cgroup cgroup2 rw,nosuid,nodev,noexec,relatime,nsdelegate,memory_recursiveprot 0 0
+any_device_name /mnt/cgroups cgroup2 various,options 0 0
+`)
+				})
+				It("panics", func() {
+					Expect(func() { determineControllerMounts(&sys1, &sys2) }).To(PanicWith("Multiple cgroup v2 mount points"))
+				})
 			})
 		})
 
