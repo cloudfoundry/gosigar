@@ -663,7 +663,7 @@ func determineControllerMounts(sysd1, sysd2 *string) {
 
 		if mtype == "cgroup2" {
 			if *sysd2 != "" {
-				panic("Multiple cgroup v2 mount points")
+				return true
 			}
 			*sysd2 = mpath
 			return true
@@ -672,7 +672,7 @@ func determineControllerMounts(sysd1, sysd2 *string) {
 			options := strings.Split(moptions, ",")
 			if stringSliceContains(options, "memory") {
 				if *sysd1 != "" {
-					panic("Multiple cgroup v1 mount points")
+					return true
 				}
 				*sysd1 = mpath
 				return true

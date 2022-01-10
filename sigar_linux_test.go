@@ -147,9 +147,25 @@ memory2 /smart/fox/jumped/by/lazy/dog cgroup2 irrelevant,options
 			})
 		})
 
-		// Note: We cannot test that the system panics when
-		// the file contains multiple entries for any of the
-		// controllers. Because, well, panic.
+		Describe("Multiple Mounts", func() {
+			var sys1, sys2 string
+
+			BeforeEach(func() {
+				setupFile(procd+"/self/mounts", `
+device path type options
+memory1 /somewhere/over/the/rainbow cgroup dummy,memory,and,other
+memory2 /smart/fox/jumped/by/lazy/dog cgroup2 irrelevant,options
+memory1 /somewhere/over/the/rainbow/duplicate cgroup dummy,memory,and,other
+memory2 /smart/fox/jumped/by/lazy/dog/duplicate cgroup2 irrelevant,options
+`)
+			})
+
+			It("it extracts the first matching mounts", func() {
+				determineControllerMounts(&sys1, &sys2)
+				Expect(sys1).To(Equal("/somewhere/over/the/rainbow"))
+				Expect(sys2).To(Equal("/smart/fox/jumped/by/lazy/dog"))
+			})
+		})
 	})
 
 	Describe("CPU", func() {
