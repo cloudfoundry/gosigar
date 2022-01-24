@@ -48,8 +48,8 @@ var _ = Describe("SigarShared", func() {
 
 			err := pCpu.Get(cpuGenerator.Process.Pid)
 			Expect(err).ToNot(HaveOccurred())
-			Expect(pCpu.Percent).To(BeNumerically(">=", 0.9))
-			Expect(pCpu.Percent).To(BeNumerically("<=", 1.1))
+			Expect(pCpu.Percent).To(BeNumerically(">=", 0.7))
+			Expect(pCpu.Percent).To(BeNumerically("<=", 1.6))
 		})
 
 		It("does not conflate multiple processes", func() {
