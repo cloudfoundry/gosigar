@@ -499,8 +499,11 @@ func determineMemoryLimit(cgroup string) (uint64, error) {
 		}
 		return true
 	})
+	if err != nil {
+		return 0, err
+	}
 
-	return strtoull(string(limitAsString)), err
+	return strtoull(string(limitAsString))
 }
 
 func determineSelfCgroup(cgroup *string) error {
