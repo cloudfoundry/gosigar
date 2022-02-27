@@ -488,12 +488,19 @@ func determineMemoryLimit(cgroup string) (uint64, error) {
 		return strtoull(val)
 	}
 
-	limitAsString, err = ioutil.ReadFile(Sysd1 + cgroup + "/memory.limit_in_bytes")
-	if err == nil {
-		return strtoull(strings.Split(string(limitAsString), "\n")[0])
-	}
+	err = readFile(Sysd1 + cgroup + "memory.stat", func(line string) bool {
+		fields := strings.Split(line, " ")
+		if len(fields) != 2 {
+			return true
+		}
+		if fields[0] == "hierarchical_memory_limit" {
+			limitAsString = []byte(strings.Trim(fields[1], " "))
+			return false
+		}
+		return true
+	})
 
-	return 0, err
+	return strtoull(string(limitAsString)), err
 }
 
 func determineSelfCgroup(cgroup *string) error {
