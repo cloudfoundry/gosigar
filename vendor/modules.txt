@@ -57,7 +57,7 @@ github.com/stretchr/testify/assert
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
-# golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5
+# golang.org/x/sys v0.0.0-20220318055525-2edf467146b5
 ## explicit; go 1.17
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/windows
