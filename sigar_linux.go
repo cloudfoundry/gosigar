@@ -12,7 +12,11 @@ import (
 	"syscall"
 )
 
-const MaxUint64 = ^uint64(0)
+const (
+	MaxUint64 = ^uint64(0)
+	// UnlimitedMemorySize defines the bytes size when memory limit is not set
+	UnlimitedMemorySize = "9223372036854771712"
+)
 
 var system struct {
 	ticks uint64
@@ -488,7 +492,12 @@ func determineMemoryLimit(cgroup string) (uint64, error) {
 		return strtoull(val)
 	}
 
-	err = readFile(Sysd1 + cgroup + "memory.stat", func(line string) bool {
+	limitAsString, err = ioutil.ReadFile(Sysd1 + cgroup + "/memory.limit_in_bytes")
+	if string(limitAsString) != UnlimitedMemorySize && err == nil {
+		return strtoull(strings.Split(string(limitAsString), "\n")[0])
+	}
+
+	err = readFile(Sysd1+cgroup+"/memory.stat", func(line string) bool {
 		fields := strings.Split(line, " ")
 		if len(fields) != 2 {
 			return true
