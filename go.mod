@@ -1,13 +1,13 @@
 module github.com/cloudfoundry/gosigar
 
-go 1.17
+go 1.18
 
 require (
 	github.com/onsi/ginkgo v1.2.1-0.20160409220416-2c2e9bb47b4e
 	github.com/onsi/gomega v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.1.4
-	golang.org/x/sys v0.0.0-20220325203850-36772127a21f
+	golang.org/x/sys v0.0.0-20220403205710-6acee93ad0eb
 )
 
 require (
