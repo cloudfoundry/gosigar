@@ -497,22 +497,21 @@ func determineMemoryLimit(cgroup string) (uint64, error) {
 		return strtoull(strings.Split(string(limitAsString), "\n")[0])
 	}
 
-	err = readFile(Sysd1+cgroup+"/memory.stat", func(line string) bool {
-		fields := strings.Split(line, " ")
-		if len(fields) != 2 {
-			return true
-		}
-		if fields[0] == "hierarchical_memory_limit" {
-			limitAsString = []byte(strings.Trim(fields[1], " "))
-			return false
-		}
-		return true
-	})
-	if err != nil {
-		return 0, err
+	var limit uint64
+	table := map[string]*uint64{
+		"hierarchical_memory_limit": &limit,
 	}
 
-	return strtoull(string(limitAsString))
+	err, found := parseCgroupMeminfo(Sysd1+cgroup, table)
+	if err == nil {
+		if !found {
+			// If no data was found, simply claim `zero limit set`.
+			return 0, errors.New("no hierarchical memory limit found")
+		}
+		return limit, nil
+	}
+
+	return 0, err
 }
 
 func determineSelfCgroup(cgroup *string) error {

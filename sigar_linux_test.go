@@ -295,7 +295,7 @@ memory2 /smart/fox/jumped/by/lazy/dog/duplicate cgroup2 irrelevant,options
 				memStatSetup(``, ``)
 				limit, err := determineMemoryLimit(``)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal(`strconv.ParseUint: parsing "": invalid syntax`))
+				Expect(err.Error()).To(Equal(`no hierarchical memory limit found`))
 				Expect(limit).To(BeNumerically("==", 0))
 			})
 			It("fails for missing data in v1 file", func() {
