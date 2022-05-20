@@ -14,7 +14,7 @@ import (
 
 const (
 	MaxUint64 = ^uint64(0)
-	// UnlimitedMemorySize defines the bytes size when memory limit is not set
+	// UnlimitedMemorySize defines the bytes size when memory limit is not set (2 ^ 63 - 4096)
 	UnlimitedMemorySize = "9223372036854771712"
 )
 
