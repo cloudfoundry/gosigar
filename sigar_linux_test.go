@@ -287,7 +287,15 @@ memory2 /smart/fox/jumped/by/lazy/dog/duplicate cgroup2 irrelevant,options
 			It("fails for missing files", func() {
 				limit, err := determineMemoryLimit(``)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("open " + procd + "/memory/memory.limit_in_bytes: no such file or directory"))
+				// it will falls back to memory.stat when memory.limit_in_bytes not found
+				Expect(err.Error()).To(Equal("open " + procd + "/memory/memory.stat: no such file or directory"))
+				Expect(limit).To(BeNumerically("==", 0))
+			})
+			It("fails for missing data in memory.stat file", func() {
+				memStatSetup(``, ``)
+				limit, err := determineMemoryLimit(``)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal(`no hierarchical memory limit found`))
 				Expect(limit).To(BeNumerically("==", 0))
 			})
 			It("fails for missing data in v1 file", func() {
@@ -330,6 +338,12 @@ memory2 /smart/fox/jumped/by/lazy/dog/duplicate cgroup2 irrelevant,options
 				limit, err := determineMemoryLimit(``)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(limit).To(BeNumerically("==", 1111))
+			})
+			It("returns hierarchyMemoryLimit when limit_in_bytes is unlimited", func() {
+				memStatSetup(``, `hierarchical_memory_limit 3333`)
+				limit, err := determineMemoryLimit(``)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(limit).To(BeNumerically("==", 3333))
 			})
 			It("signals v2 no limit with failure", func() {
 				memLimitSetup2(``, `max`)

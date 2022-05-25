@@ -12,7 +12,11 @@ import (
 	"syscall"
 )
 
-const MaxUint64 = ^uint64(0)
+const (
+	MaxUint64 = ^uint64(0)
+	// UnlimitedMemorySize defines the bytes size when memory limit is not set (2 ^ 63 - 4096)
+	UnlimitedMemorySize = "9223372036854771712"
+)
 
 var system struct {
 	ticks uint64
@@ -489,8 +493,22 @@ func determineMemoryLimit(cgroup string) (uint64, error) {
 	}
 
 	limitAsString, err = ioutil.ReadFile(Sysd1 + cgroup + "/memory.limit_in_bytes")
-	if err == nil {
+	if string(limitAsString) != UnlimitedMemorySize && err == nil {
 		return strtoull(strings.Split(string(limitAsString), "\n")[0])
+	}
+
+	var limit uint64
+	table := map[string]*uint64{
+		"hierarchical_memory_limit": &limit,
+	}
+
+	err, found := parseCgroupMeminfo(Sysd1+cgroup, table)
+	if err == nil {
+		if !found {
+			// If no data was found, simply claim `zero limit set`.
+			return 0, errors.New("no hierarchical memory limit found")
+		}
+		return limit, nil
 	}
 
 	return 0, err
