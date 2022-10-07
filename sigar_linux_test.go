@@ -12,6 +12,7 @@ import (
 
 // Helpers. Create various system information files
 var procd string
+var etcd string
 
 func setupFile(path, contents string) {
 	_ = os.MkdirAll(filepath.Dir(path), 0755)
@@ -88,23 +89,48 @@ Cached:          5064684 kB
 `)
 }
 
+func setupEtcMtab() {
+	setupMountsFile(etcd + "/mtab")
+}
+
+func setupProcMounts() {
+	setupMountsFile(procd + "/mounts")
+}
+
+func setupMountsFile(filePath string) {
+	setupFile(filePath, `sysfs /sys sysfs rw,nosuid,nodev,noexec,relatime 0 0
+	proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+	udev /dev devtmpfs rw,nosuid,relatime,size=949852k,nr_inodes=185646,mode=755 0 0
+	devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000 0 0
+	tmpfs /run tmpfs rw,nosuid,noexec,relatime,size=204020k,mode=755 0 0
+	/dev/sda1 / ext4 rw,noatime,errors=remount-ro,stripe=32753 0 0
+	/dev/sdb1 /home ext4 rw,noatime,errors=remount-ro 0 0`)
+}
+
 var _ = Describe("sigarLinux", func() {
 	BeforeEach(func() {
 		var err error
 		procd, err = ioutil.TempDir("", "sigarTests")
 		Expect(err).ToNot(HaveOccurred())
+		etcd, err = ioutil.TempDir("", "sigarTestsEtc")
+		Expect(err).ToNot(HaveOccurred())
 		// Can share the directory, no overlap in files used
 		Procd = procd
+		Etcd = etcd
 		Sysd1 = procd + "/memory"
 		Sysd2 = procd
 	})
 
 	AfterEach(func() {
 		Procd = "/proc"
+		Etcd = "/etc"
 		Sysd1 = "/sys/fs/cgroup/unified"
 		Sysd2 = "/sys/fs/cgroup/memory"
 
 		err := os.RemoveAll(procd)
+		Expect(err).ToNot(HaveOccurred())
+
+		err = os.RemoveAll(etcd)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -996,6 +1022,32 @@ DirectMap2M:      333824 kB
 
 				Expect(swap.Total).To(BeNumerically("==", 786428*1024))
 				Expect(swap.Free).To(BeNumerically("==", 786428*1024))
+			})
+		})
+		Describe("List filesystems in /etc/mtab", func() {
+			BeforeEach(func() {
+				setupEtcMtab()
+			})
+
+			It("returns correct list of filesystems", func() {
+				fslist := FileSystemList{}
+				err := fslist.Get()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(len(fslist.List)).To(BeNumerically(">", 0))
+			})
+		})
+		Describe("List filesystems in /proc/mounts", func() {
+			BeforeEach(func() {
+				setupProcMounts()
+			})
+
+			It("returns correct list of filesystems", func() {
+				fslist := FileSystemList{}
+				err := fslist.Get()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(len(fslist.List)).To(BeNumerically(">", 0))
 			})
 		})
 	})
