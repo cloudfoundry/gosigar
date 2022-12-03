@@ -3,8 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/onsi/ginkgo/ginkgo/convert"
 	"os"
+
+	"github.com/onsi/ginkgo/ginkgo/convert"
+	colorable "github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable"
+	"github.com/onsi/ginkgo/types"
 )
 
 func BuildConvertCommand() *Command {
@@ -20,6 +23,10 @@ func BuildConvertCommand() *Command {
 }
 
 func convertPackage(args []string, additionalArgs []string) {
+	deprecationTracker := types.NewDeprecationTracker()
+	deprecationTracker.TrackDeprecation(types.Deprecations.Convert())
+	fmt.Fprintln(colorable.NewColorableStderr(), deprecationTracker.DeprecationsReport())
+
 	if len(args) != 1 {
 		println(fmt.Sprintf("usage: ginkgo convert /path/to/your/package"))
 		os.Exit(1)

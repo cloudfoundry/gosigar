@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,15 +12,20 @@ import (
 
 	"go/build"
 
+	sprig "github.com/go-task/slim-sprig"
 	"github.com/onsi/ginkgo/ginkgo/nodot"
 )
 
 func BuildBootstrapCommand() *Command {
-	var agouti, noDot, internal bool
+	var (
+		agouti, noDot, internal bool
+		customBootstrapFile     string
+	)
 	flagSet := flag.NewFlagSet("bootstrap", flag.ExitOnError)
 	flagSet.BoolVar(&agouti, "agouti", false, "If set, bootstrap will generate a bootstrap file for writing Agouti tests")
 	flagSet.BoolVar(&noDot, "nodot", false, "If set, bootstrap will generate a bootstrap file that does not . import ginkgo and gomega")
 	flagSet.BoolVar(&internal, "internal", false, "If set, generate will generate a test file that uses the regular package name")
+	flagSet.StringVar(&customBootstrapFile, "template", "", "If specified, generate will use the contents of the file passed as the bootstrap template")
 
 	return &Command{
 		Name:         "bootstrap",
@@ -30,7 +36,8 @@ func BuildBootstrapCommand() *Command {
 			"Accepts the following flags:",
 		},
 		Command: func(args []string, additionalArgs []string) {
-			generateBootstrap(agouti, noDot, internal)
+			generateBootstrap(agouti, noDot, internal, customBootstrapFile)
+			emitRCAdvertisement()
 		},
 	}
 }
@@ -38,10 +45,10 @@ func BuildBootstrapCommand() *Command {
 var bootstrapText = `package {{.Package}}
 
 import (
+	"testing"
+
 	{{.GinkgoImport}}
 	{{.GomegaImport}}
-
-	"testing"
 )
 
 func Test{{.FormattedName}}(t *testing.T) {
@@ -53,11 +60,11 @@ func Test{{.FormattedName}}(t *testing.T) {
 var agoutiBootstrapText = `package {{.Package}}
 
 import (
+	"testing"
+
 	{{.GinkgoImport}}
 	{{.GomegaImport}}
 	"github.com/sclevine/agouti"
-
-	"testing"
 )
 
 func Test{{.FormattedName}}(t *testing.T) {
@@ -126,13 +133,10 @@ func determinePackageName(name string, internal bool) string {
 
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-	return false
+	return err == nil
 }
 
-func generateBootstrap(agouti, noDot, internal bool) {
+func generateBootstrap(agouti, noDot, internal bool, customBootstrapFile string) {
 	packageName, bootstrapFilePrefix, formattedName := getPackageAndFormattedName()
 	data := bootstrapData{
 		Package:       determinePackageName(packageName, internal),
@@ -162,13 +166,19 @@ func generateBootstrap(agouti, noDot, internal bool) {
 	defer f.Close()
 
 	var templateText string
-	if agouti {
+	if customBootstrapFile != "" {
+		tpl, err := ioutil.ReadFile(customBootstrapFile)
+		if err != nil {
+			panic(err.Error())
+		}
+		templateText = string(tpl)
+	} else if agouti {
 		templateText = agoutiBootstrapText
 	} else {
 		templateText = bootstrapText
 	}
 
-	bootstrapTemplate, err := template.New("bootstrap").Parse(templateText)
+	bootstrapTemplate, err := template.New("bootstrap").Funcs(sprig.TxtFuncMap()).Parse(templateText)
 	if err != nil {
 		panic(err.Error())
 	}

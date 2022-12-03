@@ -9,6 +9,7 @@ import (
 	"github.com/onsi/ginkgo/ginkgo/interrupthandler"
 	"github.com/onsi/ginkgo/ginkgo/testrunner"
 	"github.com/onsi/ginkgo/ginkgo/testsuite"
+	colorable "github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable"
 )
 
 type compilationInput struct {
@@ -40,7 +41,7 @@ func (r *SuiteRunner) compileInParallel(runners []*testrunner.TestRunner, numCom
 	//an array of channels - the nth runner's compilation output is sent to the nth channel in this array
 	//we read from these channels in order to ensure we run the suites in order
 	orderedCompilationOutputs := []chan compilationOutput{}
-	for _ = range runners {
+	for range runners {
 		orderedCompilationOutputs = append(orderedCompilationOutputs, make(chan compilationOutput, 1))
 	}
 
@@ -166,7 +167,7 @@ func (r *SuiteRunner) listFailedSuites(suitesThatFailed []testsuite.TestSuite) {
 		if config.DefaultReporterConfig.NoColor {
 			fmt.Printf("\t"+packageNameFormatter+" %s\n", suite.PackageName, suite.Path)
 		} else {
-			fmt.Printf("\t%s"+packageNameFormatter+"%s %s%s%s\n", redColor, suite.PackageName, defaultStyle, lightGrayColor, suite.Path, defaultStyle)
+			fmt.Fprintf(colorable.NewColorableStdout(), "\t%s"+packageNameFormatter+"%s %s%s%s\n", redColor, suite.PackageName, defaultStyle, lightGrayColor, suite.Path, defaultStyle)
 		}
 	}
 }
