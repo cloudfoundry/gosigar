@@ -184,16 +184,13 @@ func (self *CpuList) Get() error {
 }
 
 func (self *ProcMem) Get(pid int) error {
-	return nil
 	return errors.New("not implemented: ProcMem")
 }
 
 func (self *ProcArgs) Get(pid int) error {
-	return nil
 	return errors.New("not implemented: ProcArgs")
 }
 
 func (self *ProcExe) Get(pid int) error {
-	return nil
 	return errors.New("not implemented: ProcExe")
 }
