@@ -152,40 +152,48 @@ func (self *FileSystemUsage) Get(path string) error {
 	return nil
 }
 
+func (self *ProcTime) Get(pid int) error {
+	rusage := unix.Rusage{}
+	unix.Getrusage(pid, &rusage)
+	self.User = uint64(rusage.Utime.Nano() / 1e6)
+	self.Sys = uint64(rusage.Stime.Nano() / 1e6)
+	self.Total = self.User + self.Sys
+	return nil
+}
+
 func (self *Cpu) Get() error {
 	// unix.SysctlRaw("kern.cp_time")
-	return errors.New("not implemented")
+	return errors.New("not implemented: Cpu")
 }
 
 func (self *Mem) Get() error {
-	return errors.New("not implemented")
+	return errors.New("not implemented: Mem")
 }
 
 func (self *Mem) GetIgnoringCGroups() error {
-	return errors.New("not implemented")
+	return errors.New("not implemented: Mem")
 }
 
 func (self *Swap) Get() error {
 	// Use vm.swap_total sysctl ?
-	return errors.New("not implemented")
+	return errors.New("not implemented: Swap")
 }
 
 func (self *CpuList) Get() error {
-	return errors.New("not implemented")
-}
-
-func (self *ProcTime) Get(pid int) error {
-	return errors.New("not implemented")
+	return errors.New("not implemented: CpuList")
 }
 
 func (self *ProcMem) Get(pid int) error {
-	return errors.New("not implemented")
+	return nil
+	return errors.New("not implemented: ProcMem")
 }
 
 func (self *ProcArgs) Get(pid int) error {
-	return errors.New("not implemented")
+	return nil
+	return errors.New("not implemented: ProcArgs")
 }
 
 func (self *ProcExe) Get(pid int) error {
-	return errors.New("not implemented")
+	return nil
+	return errors.New("not implemented: ProcExe")
 }
