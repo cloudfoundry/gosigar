@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"errors"
 	"golang.org/x/sys/unix"
+	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -171,7 +172,7 @@ func (self *Mem) Get() error {
 }
 
 func (self *Mem) GetIgnoringCGroups() error {
-	return errors.New("not implemented: Mem")
+	return self.Get()
 }
 
 func (self *Swap) Get() error {
@@ -188,7 +189,26 @@ func (self *ProcMem) Get(pid int) error {
 }
 
 func (self *ProcArgs) Get(pid int) error {
-	return errors.New("not implemented: ProcArgs")
+	contents, err := readProcFile(pid, "cmdline")
+	if err != nil {
+		return err
+	}
+
+	bbuf := bytes.NewBuffer(contents)
+
+	var args []string
+
+	for {
+		arg, err := bbuf.ReadBytes(0)
+		if err == io.EOF {
+			break
+		}
+		args = append(args, string(chop(arg)))
+	}
+
+	self.List = args
+
+	return nil
 }
 
 func (self *ProcExe) Get(pid int) error {
