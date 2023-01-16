@@ -6,9 +6,16 @@ package sigar
 import (
 	"errors"
 	"golang.org/x/sys/unix"
-	"syscall"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 	"unsafe"
+)
+
+var (
+	Procd string = "/proc"
 )
 
 type loadStruct struct {
@@ -16,13 +23,32 @@ type loadStruct struct {
 	Fscale uint64
 }
 
+func procFileName(pid int, name string) string {
+	return Procd + "/" + strconv.Itoa(pid) + "/" + name
+}
+
+func readProcFile(pid int, name string) ([]byte, error) {
+	path := procFileName(pid, name)
+	contents, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		if perr, ok := err.(*os.PathError); ok {
+			if perr.Err == unix.ENOENT {
+				return nil, unix.ESRCH
+			}
+		}
+	}
+
+	return contents, err
+}
+
 func (self *Uptime) Get() error {
-	var tv syscall.Timeval
+	var tv unix.Timeval
 	boottimeRaw, err := unix.SysctlRaw("kern.boottime")
 	if err != nil {
 		return err
 	}
-	tv = *(*syscall.Timeval)(unsafe.Pointer(&boottimeRaw[0]))
+	tv = *(*unix.Timeval)(unsafe.Pointer(&boottimeRaw[0]))
 	self.Length = time.Since(time.Unix(int64(tv.Sec), int64(tv.Usec)*1000)).Seconds()
 	return nil
 }
@@ -42,12 +68,76 @@ func (self *LoadAverage) Get() error {
 	return nil
 }
 
+func (self *ProcList) Get() error {
+	dir, err := os.Open(Procd)
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+
+	const readAllDirnames = -1 // see os.File.Readdirnames doc
+
+	names, err := dir.Readdirnames(readAllDirnames)
+	if err != nil {
+		return err
+	}
+
+	capacity := len(names)
+	list := make([]int, 0, capacity)
+
+	for _, name := range names {
+		if name[0] < '0' || name[0] > '9' {
+			continue
+		}
+		pid, err := strconv.Atoi(name)
+		if err == nil {
+			list = append(list, pid)
+		}
+	}
+
+	self.List = list
+
+	return nil
+}
+
+func (self *ProcState) Get(pid int) error {
+	contents, err := readProcFile(pid, "status")
+	if err != nil {
+		return err
+	}
+	fields := strings.Fields(string(contents))
+
+	self.Name = fields[0]
+	self.Ppid, _ = strconv.Atoi(fields[2])
+
+	return nil
+}
+
+func (self *FileSystemList) Get() error {
+	n, err := unix.Getfsstat(nil, unix.MNT_NOWAIT)
+	if err != nil {
+		return err
+	}
+	fslist := make([]FileSystem, 0, n)
+	buf := make([]unix.Statfs_t, n)
+	unix.Getfsstat(buf, unix.MNT_NOWAIT)
+	for _, f := range buf {
+		fs := FileSystem{}
+		fs.DirName = string(f.Mntonname[:])
+		fs.DevName = string(f.Mntfromname[:])
+		fs.SysTypeName = string(f.Fstypename[:])
+		fslist = append(fslist, fs)
+	}
+	self.List = fslist
+	return nil
+}
+
 func (self *FileSystemUsage) Get(path string) error {
 	return errors.New("not implemented")
 }
 
 func (self *Cpu) Get() error {
-	// Use kern.cp_time sysctl ?
+	// unix.SysctlRaw("kern.cp_time")
 	return errors.New("not implemented")
 }
 
@@ -68,19 +158,7 @@ func (self *CpuList) Get() error {
 	return errors.New("not implemented")
 }
 
-func (self *FileSystemList) Get() error {
-	return errors.New("not implemented")
-}
-
-func (self *ProcList) Get() error {
-	return errors.New("not implemented")
-}
-
 func (self *ProcTime) Get(pid int) error {
-	return errors.New("not implemented")
-}
-
-func (self *ProcState) Get(pid int) error {
 	return errors.New("not implemented")
 }
 
