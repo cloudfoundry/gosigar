@@ -4,6 +4,7 @@
 package sigar
 
 import (
+	"bytes"
 	"errors"
 	"golang.org/x/sys/unix"
 	"io/ioutil"
@@ -123,9 +124,9 @@ func (self *FileSystemList) Get() error {
 	unix.Getfsstat(buf, unix.MNT_NOWAIT)
 	for _, f := range buf {
 		fs := FileSystem{}
-		fs.DirName = string(f.Mntonname[:])
-		fs.DevName = string(f.Mntfromname[:])
-		fs.SysTypeName = string(f.Fstypename[:])
+		fs.DirName = string(bytes.Trim(f.Mntonname[:], "\x00"))
+		fs.DevName = string(bytes.Trim(f.Mntfromname[:], "\x00"))
+		fs.SysTypeName = string(bytes.Trim(f.Fstypename[:], "\x00"))
 		fslist = append(fslist, fs)
 	}
 	self.List = fslist
@@ -133,7 +134,22 @@ func (self *FileSystemList) Get() error {
 }
 
 func (self *FileSystemUsage) Get(path string) error {
-	return errors.New("not implemented")
+	stat := unix.Statfs_t{}
+	err := unix.Statfs(path, &stat)
+	if err != nil {
+		return err
+	}
+
+	bsize := stat.Bsize / 512
+
+	self.Total = (uint64(stat.Blocks) * uint64(bsize)) >> 1
+	self.Free = (uint64(stat.Bfree) * uint64(bsize)) >> 1
+	self.Avail = (uint64(stat.Bavail) * uint64(bsize)) >> 1
+	self.Used = self.Total - self.Free
+	self.Files = stat.Files
+	self.FreeFiles = uint64(stat.Ffree)
+
+	return nil
 }
 
 func (self *Cpu) Get() error {
