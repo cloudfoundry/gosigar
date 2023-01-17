@@ -168,7 +168,26 @@ func (self *Cpu) Get() error {
 }
 
 func (self *Mem) Get() error {
-	return errors.New("not implemented: Mem")
+	var err error
+
+	self.Total, err = unix.SysctlUint64("hw.physmem")
+	if err != nil {
+		return err
+	}
+
+	pageSize, err := unix.SysctlUint32("hw.pagesize")
+	if err != nil {
+		return err
+	}
+
+	freePages, err := unix.SysctlUint32("vm.stats.vm.v_free_count")
+	if err != nil {
+		return err
+	}
+	self.Free = uint64(freePages) * uint64(pageSize)
+
+	self.Used = self.Total - self.Free
+	return nil
 }
 
 func (self *Mem) GetIgnoringCGroups() error {
@@ -176,8 +195,13 @@ func (self *Mem) GetIgnoringCGroups() error {
 }
 
 func (self *Swap) Get() error {
-	// Use vm.swap_total sysctl ?
-	return errors.New("not implemented: Swap")
+	var err error
+	self.Total, err = unix.SysctlUint64("vm.swap_total")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (self *CpuList) Get() error {
