@@ -209,7 +209,22 @@ func (self *CpuList) Get() error {
 }
 
 func (self *ProcMem) Get(pid int) error {
-	return errors.New("not implemented: ProcMem")
+	pageSize, err := unix.SysctlUint32("hw.pagesize")
+	if err != nil {
+		return err
+	}
+
+	rusage := unix.Rusage{}
+	unix.Getrusage(pid, &rusage)
+
+	self.Resident = (uint64(rusage.Ixrss) + uint64(rusage.Idrss)) * uint64(pageSize)
+	self.Share = uint64(rusage.Isrss) * uint64(pageSize)
+	self.Size = self.Resident + self.Share
+	self.MinorFaults = uint64(rusage.Minflt)
+	self.MajorFaults = uint64(rusage.Majflt)
+	self.PageFaults = self.MinorFaults + self.MajorFaults
+
+	return nil
 }
 
 func (self *ProcArgs) Get(pid int) error {
