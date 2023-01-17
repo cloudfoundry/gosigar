@@ -5,7 +5,6 @@ package sigar
 
 import (
 	"bytes"
-	"errors"
 	"golang.org/x/sys/unix"
 	"io"
 	"io/ioutil"
@@ -164,7 +163,7 @@ func (self *ProcTime) Get(pid int) error {
 
 func (self *Cpu) Get() error {
 	// unix.SysctlRaw("kern.cp_time")
-	return errors.New("not implemented: Cpu")
+	return ErrNotImplemented
 }
 
 func (self *Mem) Get() error {
@@ -205,7 +204,7 @@ func (self *Swap) Get() error {
 }
 
 func (self *CpuList) Get() error {
-	return errors.New("not implemented: CpuList")
+	return ErrNotImplemented
 }
 
 func (self *ProcMem) Get(pid int) error {
