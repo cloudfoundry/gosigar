@@ -251,5 +251,10 @@ func (self *ProcArgs) Get(pid int) error {
 }
 
 func (self *ProcExe) Get(pid int) error {
-	return errors.New("not implemented: ProcExe")
+	var err error
+	self.Name, err = os.Readlink(procFileName(pid, "file"))
+	if err != nil {
+		return err
+	}
+	return nil
 }
