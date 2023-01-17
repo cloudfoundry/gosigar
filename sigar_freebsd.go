@@ -203,8 +203,40 @@ func (self *Swap) Get() error {
 	return nil
 }
 
+type cpuStat struct {
+	user int64
+	nice int64
+	sys  int64
+	irq  int64
+	idle int64
+}
+
 func (self *CpuList) Get() error {
-	return ErrNotImplemented
+	cpTimes, err := unix.SysctlRaw("kern.cp_times")
+	if err != nil {
+		return err
+	}
+
+	// 5 values of 8 bytes (int64) per CPU
+	ncpu := len(cpTimes) / 8 / 5
+
+	cpulist := make([]Cpu, 0, ncpu)
+
+	for i := 0; i < ncpu; i++ {
+		cpuRaw := *(*cpuStat)(unsafe.Pointer(&cpTimes[i*8*5]))
+
+		cpu := Cpu{}
+		cpu.User = uint64(cpuRaw.user)
+		cpu.Nice = uint64(cpuRaw.nice)
+		cpu.Sys = uint64(cpuRaw.sys)
+		cpu.Irq = uint64(cpuRaw.irq)
+		cpu.Idle = uint64(cpuRaw.idle)
+
+		cpulist = append(cpulist, cpu)
+	}
+	self.List = cpulist
+
+	return nil
 }
 
 func (self *ProcMem) Get(pid int) error {
