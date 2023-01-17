@@ -162,8 +162,20 @@ func (self *ProcTime) Get(pid int) error {
 }
 
 func (self *Cpu) Get() error {
-	// unix.SysctlRaw("kern.cp_time")
-	return ErrNotImplemented
+	cpTime, err := unix.SysctlRaw("kern.cp_time")
+	if err != nil {
+		return err
+	}
+
+	cpuRaw := *(*cpuStat)(unsafe.Pointer(&cpTime[0]))
+
+	self.User = uint64(cpuRaw.user)
+	self.Nice = uint64(cpuRaw.nice)
+	self.Sys = uint64(cpuRaw.sys)
+	self.Irq = uint64(cpuRaw.irq)
+	self.Idle = uint64(cpuRaw.idle)
+
+	return nil
 }
 
 func (self *Mem) Get() error {
