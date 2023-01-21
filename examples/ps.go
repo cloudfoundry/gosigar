@@ -11,7 +11,7 @@ func main() {
 	pids.Get()
 
 	// ps -eo pid,ppid,stime,time,rss,state,comm
-	fmt.Print("   PID   PPID STIME     TIME    RSS S COMMAND\n")
+	fmt.Print("    PID    PPID STIME     TIME   RSS S COMMAND\n")
 
 	for _, pid := range pids.List {
 		state := sigar.ProcState{}
@@ -28,7 +28,7 @@ func main() {
 			continue
 		}
 
-		fmt.Printf("%6d %6d %s %s %6d %c %s\n",
+		fmt.Printf("%7d %7d %s %s %5d %c %s\n",
 			pid, state.Ppid,
 			time.FormatStartTime(), time.FormatTotal(),
 			mem.Resident/1024, state.State, state.Name)
