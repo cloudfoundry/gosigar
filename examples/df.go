@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
-	"strings"
 
 	sigar "github.com/cloudfoundry/gosigar"
 )
@@ -15,24 +15,23 @@ func formatSize(size uint64) string {
 }
 
 func main() {
+	var fileSystemFilter string
+	flag.StringVar(&fileSystemFilter, "t", "", "Filesystem to filter on")
+	flag.Parse()
 	fslist := sigar.FileSystemList{}
 	fslist.Get()
 
 	fmt.Fprintf(os.Stdout, output_format,
 		"Filesystem", "Size", "Used", "Avail", "Use%", "Mounted on")
 
-FSLIST:
 	for _, fs := range fslist.List {
 		dir_name := fs.DirName
 		usage := sigar.FileSystemUsage{}
 		usage.Get(dir_name)
 
-		if strings.HasPrefix(fs.SysTypeName, "fuse") {
-			continue
-		}
-		for _, hiddenPrefix := range []string{"/sys", "/proc", "/run"} {
-			if strings.HasPrefix(dir_name, hiddenPrefix) {
-				continue FSLIST
+		if fileSystemFilter != "" {
+			if fs.SysTypeName != fileSystemFilter {
+				continue
 			}
 		}
 
