@@ -18,7 +18,7 @@ in pure go/cgo, rather than cgo bindings for libsigar.
 
 ## Supported platforms
 
-Currently targeting modern flavors of macOS (darwin) and Linux.
+Currently targeting modern flavors of macOS (Darwin) and Linux.
 
 ## License
 
