@@ -223,7 +223,7 @@ func (self *ProcState) Get(pid int) error {
 	if err != nil {
 		return err
 	}
-	self.Name = string(pinfo.Comm[:])
+	self.Name = string(bytes.Trim(pinfo.Comm[:], "\x00"))
 	self.Ppid = int(pinfo.Ppid)
 	switch pinfo.Stat {
 	case procStateRun:
