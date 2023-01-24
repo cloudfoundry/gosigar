@@ -287,6 +287,15 @@ func (self *ProcTime) Get(pid int) error {
 	self.User = uint64(rusage.Utime.Nano() / 1e6)
 	self.Sys = uint64(rusage.Stime.Nano() / 1e6)
 	self.Total = self.User + self.Sys
+
+	var tv unix.Timeval
+	pinfo, err := getProcInfo(pid)
+	if err != nil {
+		return err
+	}
+	tv = *(*unix.Timeval)(unsafe.Pointer(&pinfo.Start[0]))
+	self.StartTime = (uint64(tv.Sec) * 1000) + (uint64(tv.Usec) / 1000)
+
 	return nil
 }
 
