@@ -5,14 +5,115 @@ package sigar
 
 import (
 	"bytes"
-	"golang.org/x/sys/unix"
+	"encoding/binary"
 	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 	"unsafe"
+
+	"golang.org/x/sys/unix"
+)
+
+const (
+	kernProc    = 14 // KERN_PROC in sysctl((3)
+	kernProcPid = 1  // KERN_PROC_PID in sysctl(3)
+)
+
+// kinfo_proc as returned by kinfo_getproc() in libutil
+// see also /usr/include/sys/user.h
+type procInfo struct {
+	Structsize   int32
+	Layout       int32
+	Args         int64
+	Paddr        int64
+	Addr         int64
+	Tracep       int64
+	Textvp       int64
+	Fd           int64
+	Vmspace      int64
+	Wchan        int64
+	Pid          int32
+	Ppid         int32
+	Pgid         int32
+	Tpgid        int32
+	Sid          int32
+	Tsid         int32
+	Jobc         [2]byte
+	Spare_short1 [2]byte
+	Tdev         int32
+	Siglist      [16]byte
+	Sigmask      [16]byte
+	Sigignore    [16]byte
+	Sigcatch     [16]byte
+	Uid          int32
+	Ruid         int32
+	Svuid        int32
+	Rgid         int32
+	Svgid        int32
+	Ngroups      [2]byte
+	Spare_short2 [2]byte
+	Groups       [64]byte
+	Size         int64
+	Rssize       int64
+	Swrss        int64
+	Tsize        int64
+	Dsize        int64
+	Ssize        int64
+	Xstat        [2]byte
+	Acflag       [2]byte
+	Pctcpu       int32
+	Estcpu       int32
+	Slptime      int32
+	Swtime       int32
+	Cow          int32
+	Runtime      int64
+	Start        [16]byte
+	Childtime    [16]byte
+	Flag         int64
+	Kiflag       int64
+	Traceflag    int32
+	Stat         [1]byte
+	Nice         [1]byte
+	Lock         [1]byte
+	Rqindex      [1]byte
+	Oncpu        [1]byte
+	Lastcpu      [1]byte
+	Ocomm        [17]byte
+	Wmesg        [9]byte
+	Login        [18]byte
+	Lockname     [9]byte
+	Comm         [20]byte
+	Emul         [17]byte
+	Sparestrings [68]byte
+	Spareints    [36]byte
+	Cr_flags     int32
+	Jid          int32
+	Numthreads   int32
+	Tid          int32
+	Pri          int32
+	Rusage       [144]byte
+	Rusage_ch    [144]byte
+	Pcb          int64
+	Kstack       int64
+	Udata        int64
+	Tdaddr       int64
+	Spareptrs    [48]byte
+	Spareint64s  [96]byte
+	Sflag        int64
+	Tdflags      int64
+}
+
+// See /usr/include/sys/proc.h
+var (
+	procStateIdle   = [1]uint8{0x1} // SIDL
+	procStateRun    = [1]uint8{0x2} // SRUN
+	procStateSleep  = [1]uint8{0x3} // SSLEEP
+	procStateStop   = [1]uint8{0x4} // SSTOP
+	procStateZombie = [1]uint8{0x5} // SZOMB
+	procStateWait   = [1]uint8{0x6} // SWAIT
+	procStateLock   = [1]uint8{0x7} // SLOCK
 )
 
 var (
@@ -22,6 +123,22 @@ var (
 type loadStruct struct {
 	Ldavg  [3]uint32
 	Fscale uint64
+}
+
+func getProcInfo(pid int) (procInfo, error) {
+	var pinfo procInfo
+
+	pinfoRaw, err := unix.SysctlRaw("kern", kernProc, kernProcPid, pid)
+	if err != nil {
+		return procInfo{}, err
+	}
+	pinfoReader := bytes.NewReader(pinfoRaw)
+	err = binary.Read(pinfoReader, binary.LittleEndian, &pinfo)
+	if err != nil {
+		return procInfo{}, err
+	}
+
+	return pinfo, nil
 }
 
 func procFileName(pid int, name string) string {
@@ -102,14 +219,26 @@ func (self *ProcList) Get() error {
 }
 
 func (self *ProcState) Get(pid int) error {
-	contents, err := readProcFile(pid, "status")
+	pinfo, err := getProcInfo(pid)
 	if err != nil {
 		return err
 	}
-	fields := strings.Fields(string(contents))
-
-	self.Name = fields[0]
-	self.Ppid, _ = strconv.Atoi(fields[2])
+	self.Name = string(pinfo.Comm[:])
+	self.Ppid = int(pinfo.Ppid)
+	switch pinfo.Stat {
+	case procStateRun:
+		self.State = RunStateRun
+	case procStateIdle:
+		self.State = RunStateIdle
+	case procStateSleep:
+		self.State = RunStateSleep
+	case procStateStop:
+		self.State = RunStateStop
+	case procStateZombie:
+		self.State = RunStateZombie
+	default:
+		self.State = RunStateUnknown
+	}
 
 	return nil
 }
