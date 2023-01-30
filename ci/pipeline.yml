@@ -5,6 +5,7 @@ groups:
   - test-unit
   - windows-test-unit
   - bump-deps
+  - promote
 
 jobs:
 - name: test-unit
@@ -56,6 +57,20 @@ jobs:
       repository: bumped-gosigar
       rebase: true
 
+- name: promote
+  plan:
+  - get: gosigar
+    trigger: true
+    passed:
+    - test-unit
+    - windows-test-unit
+  - put: version-semver
+    params:
+      bump: patch
+  - put: gosigar
+    params: {repository: gosigar, tag: version-semver/number, tag_prefix: v}
+
+
 resources:
 - name: gosigar
   type: git
@@ -63,6 +78,15 @@ resources:
     uri: git@github.com:cloudfoundry/gosigar.git
     branch: master
     private_key: ((github_deploy_key_gosigar.private_key))
+
+- name: version-semver
+  type: semver
+  source:
+    driver: gcs
+    initial_version: 1.3.4
+    key: current-version
+    bucket: gosigar-version
+    json_key: ((gcp_credentials_json))
 
 - name: golang-release
   type: git
