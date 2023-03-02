@@ -1,17 +1,17 @@
-package examples
+package main
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/cloudfoundry/gosigar"
+	sigar "github.com/cloudfoundry/gosigar"
 )
 
 func format(val uint64) uint64 {
 	return val / 1024
 }
 
-func free() {
+func main() {
 	mem := sigar.Mem{}
 	swap := sigar.Swap{}
 

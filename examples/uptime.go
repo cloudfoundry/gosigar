@@ -1,21 +1,21 @@
-package examples
+package main
 
 import (
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/cloudfoundry/gosigar"
+	sigar "github.com/cloudfoundry/gosigar"
 )
 
-func uptime() {
+func main() {
 	concreteSigar := sigar.ConcreteSigar{}
 
 	uptime := sigar.Uptime{}
 	uptime.Get()
 	avg, err := concreteSigar.GetLoadAverage()
 	if err != nil {
-		fmt.Printf("Failed to get load average")
+		fmt.Printf("Failed to get load average\n")
 		return
 	}
 

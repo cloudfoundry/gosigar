@@ -1,17 +1,17 @@
-package examples
+package main
 
 import (
 	"fmt"
 
-	"github.com/cloudfoundry/gosigar"
+	sigar "github.com/cloudfoundry/gosigar"
 )
 
-func ps() {
+func main() {
 	pids := sigar.ProcList{}
 	pids.Get()
 
 	// ps -eo pid,ppid,stime,time,rss,state,comm
-	fmt.Print("  PID  PPID STIME     TIME    RSS S COMMAND\n")
+	fmt.Print("    PID    PPID STIME     TIME   RSS S COMMAND\n")
 
 	for _, pid := range pids.List {
 		state := sigar.ProcState{}
@@ -28,7 +28,7 @@ func ps() {
 			continue
 		}
 
-		fmt.Printf("%5d %5d %s %s %6d %c %s\n",
+		fmt.Printf("%7d %7d %s %s %5d %c %s\n",
 			pid, state.Ppid,
 			time.FormatStartTime(), time.FormatTotal(),
 			mem.Resident/1024, state.State, state.Name)
