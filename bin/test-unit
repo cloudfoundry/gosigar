@@ -19,7 +19,7 @@ main() {
     set -x
   fi
 
-  go run github.com/onsi/ginkgo/ginkgo -p -r -randomizeAllSpecs -randomizeSuites -keepGoing -race -skipPackage=$skip_packages
+  go run github.com/onsi/ginkgo/v2/ginkgo -p -r --randomize-all --randomize-suites --keep-going --race --skip-package=$skip_packages
 }
 
 main "$@"
