@@ -20,13 +20,10 @@ func TestGetDebugInfo(t *testing.T) {
 }
 
 func TestGetTokenPrivileges(t *testing.T) {
-	h, err := windows.GetCurrentProcess()
-	if err != nil {
-		t.Fatal("GetCurrentProcess", err)
-	}
+	h := windows.CurrentProcess()
 
 	var token syscall.Token
-	err = syscall.OpenProcessToken(syscall.Handle(h), syscall.TOKEN_QUERY, &token)
+	err := syscall.OpenProcessToken(syscall.Handle(h), syscall.TOKEN_QUERY, &token)
 	if err != nil {
 		t.Fatal("OpenProcessToken", err)
 	}
@@ -42,13 +39,10 @@ func TestGetTokenPrivileges(t *testing.T) {
 }
 
 func TestEnableTokenPrivileges(t *testing.T) {
-	h, err := windows.GetCurrentProcess()
-	if err != nil {
-		t.Fatal("GetCurrentProcess", err)
-	}
+	h := windows.CurrentProcess()
 
 	var token syscall.Token
-	err = syscall.OpenProcessToken(syscall.Handle(h), syscall.TOKEN_ADJUST_PRIVILEGES|syscall.TOKEN_QUERY, &token)
+	err := syscall.OpenProcessToken(syscall.Handle(h), syscall.TOKEN_ADJUST_PRIVILEGES|syscall.TOKEN_QUERY, &token)
 	if err != nil {
 		t.Fatal("OpenProcessToken", err)
 	}
