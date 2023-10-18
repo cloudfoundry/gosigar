@@ -1,6 +1,6 @@
 module github.com/cloudfoundry/gosigar
 
-go 1.21
+go 1.21.0
 
 require (
 	github.com/onsi/ginkgo/v2 v2.13.0
