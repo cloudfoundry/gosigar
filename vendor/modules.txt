@@ -15,7 +15,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20231127191134-f3a68a39ae15
+# github.com/google/pprof v0.0.0-20231205033806-a5a03c77bf08
 ## explicit; go 1.19
 github.com/google/pprof/profile
 # github.com/onsi/ginkgo/v2 v2.13.2
