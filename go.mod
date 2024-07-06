@@ -7,7 +7,7 @@ require (
 	github.com/onsi/gomega v1.33.1
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/sys v0.21.0
+	golang.org/x/sys v0.22.0
 )
 
 require (
