@@ -17,7 +17,7 @@ func (c *ConcreteSigar) CollectCpuStats(collectionInterval time.Duration) (<-cha
 
 		// Immediately provide non-delta value.
 		// samplesCh is buffered to 1 value, so it will not block.
-		cpuUsage.Get()
+		cpuUsage.Get() //nolint:errcheck
 		samplesCh <- cpuUsage
 
 		ticker := time.NewTicker(collectionInterval)
@@ -27,7 +27,7 @@ func (c *ConcreteSigar) CollectCpuStats(collectionInterval time.Duration) (<-cha
 			case <-ticker.C:
 				previousCpuUsage := cpuUsage
 
-				cpuUsage.Get()
+				cpuUsage.Get() //nolint:errcheck
 
 				select {
 				case samplesCh <- cpuUsage.Delta(previousCpuUsage):
