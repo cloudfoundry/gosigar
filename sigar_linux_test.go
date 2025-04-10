@@ -1,7 +1,6 @@
 package sigar
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -15,8 +14,8 @@ var procd string
 var etcd string
 
 func setupFile(path, contents string) {
-	_ = os.MkdirAll(filepath.Dir(path), 0755)
-	err := ioutil.WriteFile(path, []byte(contents), 0444)
+	_ = os.MkdirAll(filepath.Dir(path), 0755) //nolint:errcheck
+	err := os.WriteFile(path, []byte(contents), 0444)
 	Expect(err).ToNot(HaveOccurred())
 }
 
@@ -110,9 +109,9 @@ func setupMountsFile(filePath string) {
 var _ = Describe("sigarLinux", func() {
 	BeforeEach(func() {
 		var err error
-		procd, err = ioutil.TempDir("", "sigarTests")
+		procd, err = os.MkdirTemp("", "sigarTests")
 		Expect(err).ToNot(HaveOccurred())
-		etcd, err = ioutil.TempDir("", "sigarTestsEtc")
+		etcd, err = os.MkdirTemp("", "sigarTestsEtc")
 		Expect(err).ToNot(HaveOccurred())
 		// Can share the directory, no overlap in files used
 		Procd = procd
@@ -208,7 +207,7 @@ memory2 /smart/fox/jumped/by/lazy/dog/duplicate cgroup2 irrelevant,options
 		Describe("Get", func() {
 			It("gets CPU usage", func() {
 				statContents := []byte("cpu 25 1 2 3 4 5 6 7")
-				err := ioutil.WriteFile(statFile, statContents, 0644)
+				err := os.WriteFile(statFile, statContents, 0644)
 				Expect(err).ToNot(HaveOccurred())
 
 				err = cpu.Get()
@@ -218,7 +217,7 @@ memory2 /smart/fox/jumped/by/lazy/dog/duplicate cgroup2 irrelevant,options
 
 			It("ignores empty lines", func() {
 				statContents := []byte("cpu ")
-				err := ioutil.WriteFile(statFile, statContents, 0644)
+				err := os.WriteFile(statFile, statContents, 0644)
 				Expect(err).ToNot(HaveOccurred())
 
 				err = cpu.Get()
@@ -230,7 +229,7 @@ memory2 /smart/fox/jumped/by/lazy/dog/duplicate cgroup2 irrelevant,options
 		Describe("CollectCpuStats", func() {
 			It("collects CPU usage over time", func() {
 				statContents := []byte("cpu 25 1 2 3 4 5 6 7")
-				err := ioutil.WriteFile(statFile, statContents, 0644)
+				err := os.WriteFile(statFile, statContents, 0644)
 				Expect(err).ToNot(HaveOccurred())
 
 				concrete := &ConcreteSigar{}
@@ -248,7 +247,7 @@ memory2 /smart/fox/jumped/by/lazy/dog/duplicate cgroup2 irrelevant,options
 				}))
 
 				statContents = []byte("cpu 30 3 7 10 25 55 36 65")
-				err = ioutil.WriteFile(statFile, statContents, 0644)
+				err = os.WriteFile(statFile, statContents, 0644)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(<-cpuUsages).To(Equal(Cpu{
@@ -1011,7 +1010,7 @@ Hugepagesize:       2048 kB
 DirectMap4k:       59328 kB
 DirectMap2M:      333824 kB
 `
-				err := ioutil.WriteFile(meminfoFile, []byte(meminfoContents), 0444)
+				err := os.WriteFile(meminfoFile, []byte(meminfoContents), 0444)
 				Expect(err).ToNot(HaveOccurred())
 			})
 

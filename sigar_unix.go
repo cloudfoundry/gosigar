@@ -3,9 +3,11 @@
 
 package sigar
 
-import "syscall"
+import (
+	"syscall"
+)
 
-func (self *FileSystemUsage) Get(path string) error {
+func (self *FileSystemUsage) Get(path string) error { //nolint:staticcheck
 	stat := syscall.Statfs_t{}
 	err := syscall.Statfs(path, &stat)
 	if err != nil {
