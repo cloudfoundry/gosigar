@@ -47,17 +47,17 @@ var _ = Describe("SigarWindows", func() {
 
 			var cpu Cpu
 			Eventually(func() uint64 {
-				cpu.Get()
+				cpu.Get() //nolint:errcheck
 				return cpu.Idle
 			}, time.Second*10).Should(BeNumerically(">", old.Idle))
 
 			Eventually(func() uint64 {
-				cpu.Get()
+				cpu.Get() //nolint:errcheck
 				return cpu.User
 			}, time.Second*20).Should(BeNumerically(">", old.User))
 
 			Eventually(func() uint64 {
-				cpu.Get()
+				cpu.Get() //nolint:errcheck
 				return cpu.Sys
 			}, time.Second*10).Should(BeNumerically(">", old.Sys))
 		})

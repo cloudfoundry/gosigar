@@ -11,7 +11,9 @@ package sigar
 #include <mach/processor_info.h>
 #include <mach/vm_map.h>
 */
-import "C"
+import (
+	"C"
+)
 
 import (
 	"bytes"
@@ -23,7 +25,7 @@ import (
 	"unsafe"
 )
 
-func (self *LoadAverage) Get() error {
+func (self *LoadAverage) Get() error { //nolint:staticcheck
 	avg := []C.double{0, 0, 0}
 
 	C.getloadavg(&avg[0], C.int(len(avg)))
@@ -35,7 +37,7 @@ func (self *LoadAverage) Get() error {
 	return nil
 }
 
-func (self *Uptime) Get() error {
+func (self *Uptime) Get() error { //nolint:staticcheck
 	tv := syscall.Timeval32{}
 
 	if err := sysctlbyname("kern.boottime", &tv); err != nil {
@@ -47,7 +49,7 @@ func (self *Uptime) Get() error {
 	return nil
 }
 
-func (self *Mem) Get() error {
+func (self *Mem) Get() error { //nolint:staticcheck
 	var vmstat C.vm_statistics_data_t
 
 	if err := sysctlbyname("hw.memsize", &self.Total); err != nil {
@@ -68,7 +70,7 @@ func (self *Mem) Get() error {
 	return nil
 }
 
-func (self *Mem) GetIgnoringCGroups() error {
+func (self *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
 	return self.Get()
 }
 
@@ -76,7 +78,7 @@ type xsw_usage struct {
 	Total, Avail, Used uint64
 }
 
-func (self *Swap) Get() error {
+func (self *Swap) Get() error { //nolint:staticcheck
 	sw_usage := xsw_usage{}
 
 	if err := sysctlbyname("vm.swapusage", &sw_usage); err != nil {
@@ -90,7 +92,7 @@ func (self *Swap) Get() error {
 	return nil
 }
 
-func (self *Cpu) Get() error {
+func (self *Cpu) Get() error { //nolint:staticcheck
 	var count C.mach_msg_type_number_t = C.HOST_CPU_LOAD_INFO_COUNT
 	var cpuload C.host_cpu_load_info_data_t
 
@@ -111,7 +113,7 @@ func (self *Cpu) Get() error {
 	return nil
 }
 
-func (self *CpuList) Get() error {
+func (self *CpuList) Get() error { //nolint:staticcheck
 	var count C.mach_msg_type_number_t
 	var cpuload *C.processor_cpu_load_info_data_t
 	var ncpu C.natural_t
@@ -164,7 +166,7 @@ func (self *CpuList) Get() error {
 	return nil
 }
 
-func (self *FileSystemList) Get() error {
+func (self *FileSystemList) Get() error { //nolint:staticcheck
 	num, err := getfsstat(nil, C.MNT_NOWAIT)
 	if num < 0 {
 		return err
@@ -194,7 +196,7 @@ func (self *FileSystemList) Get() error {
 	return err
 }
 
-func (self *ProcList) Get() error {
+func (self *ProcList) Get() error { //nolint:staticcheck
 	n := C.proc_listpids(C.PROC_ALL_PIDS, 0, nil, 0)
 	if n <= 0 {
 		return syscall.EINVAL
@@ -226,7 +228,7 @@ func (self *ProcList) Get() error {
 	return nil
 }
 
-func (self *ProcState) Get(pid int) error {
+func (self *ProcState) Get(pid int) error { //nolint:staticcheck
 	info := C.struct_proc_taskallinfo{}
 
 	if err := task_info(pid, &info); err != nil {
@@ -261,7 +263,7 @@ func (self *ProcState) Get(pid int) error {
 	return nil
 }
 
-func (self *ProcMem) Get(pid int) error {
+func (self *ProcMem) Get(pid int) error { //nolint:staticcheck
 	info := C.struct_proc_taskallinfo{}
 
 	if err := task_info(pid, &info); err != nil {
@@ -275,7 +277,7 @@ func (self *ProcMem) Get(pid int) error {
 	return nil
 }
 
-func (self *ProcTime) Get(pid int) error {
+func (self *ProcTime) Get(pid int) error { //nolint:staticcheck
 	info := C.struct_proc_taskallinfo{}
 
 	if err := task_info(pid, &info); err != nil {
@@ -296,7 +298,7 @@ func (self *ProcTime) Get(pid int) error {
 	return nil
 }
 
-func (self *ProcArgs) Get(pid int) error {
+func (self *ProcArgs) Get(pid int) error { //nolint:staticcheck
 	var args []string
 
 	argv := func(arg string) {
@@ -310,7 +312,7 @@ func (self *ProcArgs) Get(pid int) error {
 	return err
 }
 
-func (self *ProcExe) Get(pid int) error {
+func (self *ProcExe) Get(pid int) error { //nolint:staticcheck
 	exe := func(arg string) {
 		self.Name = arg
 	}
@@ -338,19 +340,19 @@ func kern_procargs(pid int,
 	bbuf.Truncate(int(argmax))
 
 	var argc int32
-	binary.Read(bbuf, binary.LittleEndian, &argc)
+	binary.Read(bbuf, binary.LittleEndian, &argc) //nolint:errcheck
 
-	path, err := bbuf.ReadBytes(0)
+	path, err := bbuf.ReadBytes(0) //nolint:staticcheck
 	if exe != nil {
 		exe(string(chop(path)))
 	}
 
 	// skip trailing \0's
 	for {
-		c, _ := bbuf.ReadByte()
+		c, _ := bbuf.ReadByte() //nolint:errcheck
 		if c != 0 {
-			bbuf.UnreadByte()
-			break // start of argv[0]
+			bbuf.UnreadByte() //nolint:errcheck
+			break             // start of argv[0]
 		}
 	}
 
@@ -385,7 +387,7 @@ func kern_procargs(pid int,
 // XXX copied from zsyscall_darwin_amd64.go
 func sysctl(mib []C.int, old *byte, oldlen *uintptr,
 	new *byte, newlen uintptr) (err error) {
-	var p0 unsafe.Pointer
+	var p0 unsafe.Pointer //nolint:staticcheck
 	p0 = unsafe.Pointer(&mib[0])
 	_, _, e1 := syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(p0),
 		uintptr(len(mib)),
