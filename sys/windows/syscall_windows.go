@@ -141,7 +141,7 @@ func GetLogicalDriveStrings() ([]string, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "GetLogicalDriveStringsW failed to get buffer length")
 	}
-	if bufferLength < 0 {
+	if bufferLength < 0 { //nolint:staticcheck
 		return nil, errors.New("GetLogicalDriveStringsW returned an invalid buffer length")
 	}
 

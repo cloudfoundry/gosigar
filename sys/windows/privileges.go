@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package windows
@@ -102,7 +103,7 @@ type DebugInfo struct {
 }
 
 func (d DebugInfo) String() string {
-	bytes, _ := json.Marshal(d)
+	bytes, _ := json.Marshal(d) //nolint:errcheck
 	return string(bytes)
 }
 
@@ -147,10 +148,10 @@ func EnableTokenPrivileges(token syscall.Token, privileges ...string) error {
 	}
 
 	var b bytes.Buffer
-	binary.Write(&b, binary.LittleEndian, uint32(len(privValues)))
+	binary.Write(&b, binary.LittleEndian, uint32(len(privValues))) //nolint:errcheck
 	for _, p := range privValues {
-		binary.Write(&b, binary.LittleEndian, p)
-		binary.Write(&b, binary.LittleEndian, uint32(_SE_PRIVILEGE_ENABLED))
+		binary.Write(&b, binary.LittleEndian, p)                     //nolint:errcheck
+		binary.Write(&b, binary.LittleEndian, _SE_PRIVILEGE_ENABLED) //nolint:errcheck
 	}
 
 	success, err := _AdjustTokenPrivileges(token, false, &b.Bytes()[0], uint32(b.Len()), nil, nil)
@@ -171,7 +172,7 @@ func EnableTokenPrivileges(token syscall.Token, privileges ...string) error {
 func GetTokenPrivileges(token syscall.Token) (map[string]Privilege, error) {
 	// Determine the required buffer size.
 	var size uint32
-	syscall.GetTokenInformation(token, syscall.TokenPrivileges, nil, 0, &size)
+	syscall.GetTokenInformation(token, syscall.TokenPrivileges, nil, 0, &size) //nolint:errcheck
 
 	// This buffer will receive a TOKEN_PRIVILEGE structure.
 	b := bytes.NewBuffer(make([]byte, size))

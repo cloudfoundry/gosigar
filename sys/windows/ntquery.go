@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package windows
@@ -38,7 +39,7 @@ func NtQueryProcessBasicInformation(handle syscall.Handle) (ProcessBasicInformat
 	var processBasicInfo ProcessBasicInformation
 	processBasicInfoPtr := (*byte)(unsafe.Pointer(&processBasicInfo))
 	size := uint32(unsafe.Sizeof(processBasicInfo))
-	ntStatus, _ := _NtQueryInformationProcess(handle, 0, processBasicInfoPtr, size, nil)
+	ntStatus, _ := _NtQueryInformationProcess(handle, 0, processBasicInfoPtr, size, nil) //nolint:errcheck
 	if ntStatus != 0 {
 		return ProcessBasicInformation{}, errors.Errorf("NtQueryInformationProcess failed, NTSTATUS=0x%X", ntStatus)
 	}
@@ -59,7 +60,7 @@ type SystemProcessorPerformanceInformation struct {
 // used internally with NtQuerySystemInformation call and is not exported. The
 // exported equivalent is SystemProcessorPerformanceInformation.
 // https://msdn.microsoft.com/en-us/library/windows/desktop/ms724509(v=vs.85).aspx
-type _SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION struct {
+type _SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION struct { //nolint:unused
 	IdleTime   int64
 	KernelTime int64
 	UserTime   int64
@@ -86,7 +87,7 @@ func NtQuerySystemProcessorPerformanceInformation() ([]SystemProcessorPerformanc
 	// Query the performance information. Note that this function uses 0 to
 	// indicate success. Most other Windows functions use non-zero for success.
 	var returnLength uint32
-	ntStatus, _ := _NtQuerySystemInformation(systemProcessorPerformanceInformation, &b[0], uint32(len(b)), &returnLength)
+	ntStatus, _ := _NtQuerySystemInformation(systemProcessorPerformanceInformation, &b[0], uint32(len(b)), &returnLength) //nolint:errcheck
 	if ntStatus != STATUS_SUCCESS {
 		return nil, errors.Errorf("NtQuerySystemInformation failed, NTSTATUS=0x%X, bufLength=%v, returnLength=%v", ntStatus, len(b), returnLength)
 	}
