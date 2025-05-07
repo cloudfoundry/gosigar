@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-fly -t bosh-ecosystem set-pipeline \
+fly -t "${CONCOURSE_TARGET:-bosh-ecosystem}" set-pipeline \
     -p gosigar \
     -c ci/pipeline.yml
