@@ -1,3 +1,4 @@
+//go:build darwin || freebsd || linux || netbsd || openbsd
 // +build darwin freebsd linux netbsd openbsd
 
 package psnotify
@@ -90,13 +91,13 @@ func (w *Watcher) Close() error {
 	w.watchesMutex.Lock()
 	for pid := range w.watches {
 		delete(w.watches, pid)
-		w.unregister(pid)
+		w.unregister(pid) //nolint:errcheck
 	}
 	w.watchesMutex.Unlock()
 
 	w.done <- true
 
-	w.listener.close()
+	w.listener.close() //nolint:errcheck
 
 	return nil
 }
