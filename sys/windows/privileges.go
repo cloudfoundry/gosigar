@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package windows
@@ -159,6 +160,33 @@ func EnableTokenPrivileges(token syscall.Token, privileges ...string) error {
 	}
 	if err == ERROR_NOT_ALL_ASSIGNED {
 		return errors.Wrap(err, "error not all privileges were assigned")
+	}
+
+	return nil
+}
+
+// DisableTokenPrivileges disables the specified privileges in the given
+// Token. The token must have TOKEN_ADJUST_PRIVILEGES access. If the token
+// does not already contain the privilege it cannot be disabled.
+func DisableTokenPrivileges(token syscall.Token, privileges ...string) error {
+	privValues, err := mapPrivileges(privileges)
+	if err != nil {
+		return err
+	}
+
+	var b bytes.Buffer
+	binary.Write(&b, binary.LittleEndian, uint32(len(privValues)))
+	for _, p := range privValues {
+		binary.Write(&b, binary.LittleEndian, p)
+		binary.Write(&b, binary.LittleEndian, uint32(_SE_PRIVILEGE_REMOVED))
+	}
+
+	success, err := _AdjustTokenPrivileges(token, false, &b.Bytes()[0], uint32(b.Len()), nil, nil)
+	if !success {
+		return err
+	}
+	if err == ERROR_NOT_ALL_ASSIGNED {
+		return errors.Wrap(err, "error not all privileges were unassigned")
 	}
 
 	return nil
