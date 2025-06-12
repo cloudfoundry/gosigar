@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -69,31 +68,31 @@ func init() {
 	}
 
 	// grab system boot time
-	readFile(Procd+"/stat", func(line string) bool {
+	readFile(Procd+"/stat", func(line string) bool { //nolint:errcheck
 		if strings.HasPrefix(line, "btime") {
-			system.btime, _ = strtoull(line[6:])
-			return false // stop reading
+			system.btime, _ = strtoull(line[6:]) //nolint:errcheck
+			return false                         // stop reading
 		}
 		return true
 	})
 }
 
-func (self *LoadAverage) Get() error {
-	line, err := ioutil.ReadFile(Procd + "/loadavg")
+func (self *LoadAverage) Get() error { //nolint:staticcheck
+	line, err := os.ReadFile(Procd + "/loadavg")
 	if err != nil {
 		return nil
 	}
 
 	fields := strings.Fields(string(line))
 
-	self.One, _ = strconv.ParseFloat(fields[0], 64)
-	self.Five, _ = strconv.ParseFloat(fields[1], 64)
-	self.Fifteen, _ = strconv.ParseFloat(fields[2], 64)
+	self.One, _ = strconv.ParseFloat(fields[0], 64)     //nolint:errcheck
+	self.Five, _ = strconv.ParseFloat(fields[1], 64)    //nolint:errcheck
+	self.Fifteen, _ = strconv.ParseFloat(fields[2], 64) //nolint:errcheck
 
 	return nil
 }
 
-func (self *Uptime) Get() error {
+func (self *Uptime) Get() error { //nolint:staticcheck
 	sysinfo := syscall.Sysinfo_t{}
 
 	if err := syscall.Sysinfo(&sysinfo); err != nil {
@@ -105,16 +104,16 @@ func (self *Uptime) Get() error {
 	return nil
 }
 
-func (self *Mem) Get() error {
+func (self *Mem) Get() error { //nolint:staticcheck
 	return self.get(false)
 }
 
-func (self *Mem) GetIgnoringCGroups() error {
+func (self *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
 	return self.get(true)
 }
 
-func (self *Mem) get(ignoreCGroups bool) error {
-	var available uint64 = MaxUint64
+func (self *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
+	var available = MaxUint64
 	var buffers, cached uint64
 	table := map[string]*uint64{
 		"MemTotal":     &self.Total,
@@ -208,7 +207,7 @@ func (self *Mem) get(ignoreCGroups bool) error {
 	return nil
 }
 
-func (self *Swap) Get() error {
+func (self *Swap) Get() error { //nolint:staticcheck
 	table := map[string]*uint64{
 		"SwapTotal": &self.Total,
 		"SwapFree":  &self.Free,
@@ -222,10 +221,10 @@ func (self *Swap) Get() error {
 	return nil
 }
 
-func (self *Cpu) Get() error {
+func (self *Cpu) Get() error { //nolint:staticcheck
 	return readFile(Procd+"/stat", func(line string) bool {
 		if len(line) > 4 && line[0:4] == "cpu " {
-			parseCpuStat(self, line)
+			parseCpuStat(self, line) //nolint:errcheck
 			return false
 		}
 		return true
@@ -233,7 +232,7 @@ func (self *Cpu) Get() error {
 	})
 }
 
-func (self *CpuList) Get() error {
+func (self *CpuList) Get() error { //nolint:staticcheck
 	capacity := len(self.List)
 	if capacity == 0 {
 		capacity = 4
@@ -243,7 +242,7 @@ func (self *CpuList) Get() error {
 	err := readFile(Procd+"/stat", func(line string) bool {
 		if len(line) > 3 && line[0:3] == "cpu" && line[3] != ' ' {
 			cpu := Cpu{}
-			parseCpuStat(&cpu, line)
+			parseCpuStat(&cpu, line) //nolint:errcheck
 			list = append(list, cpu)
 		}
 		return true
@@ -254,7 +253,7 @@ func (self *CpuList) Get() error {
 	return err
 }
 
-func (self *FileSystemList) Get() error {
+func (self *FileSystemList) Get() error { //nolint:staticcheck
 	src := Etcd + "/mtab"
 	if _, err := os.Stat(src); err != nil {
 		src = Procd + "/mounts"
@@ -284,12 +283,12 @@ func (self *FileSystemList) Get() error {
 	return err
 }
 
-func (self *ProcList) Get() error {
+func (self *ProcList) Get() error { //nolint:staticcheck
 	dir, err := os.Open(Procd)
 	if err != nil {
 		return err
 	}
-	defer dir.Close()
+	defer dir.Close() //nolint:errcheck
 
 	const readAllDirnames = -1 // see os.File.Readdirnames doc
 
@@ -316,7 +315,7 @@ func (self *ProcList) Get() error {
 	return nil
 }
 
-func (self *ProcState) Get(pid int) error {
+func (self *ProcState) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "stat")
 	if err != nil {
 		return err
@@ -328,20 +327,20 @@ func (self *ProcState) Get(pid int) error {
 
 	self.State = RunState(fields[2][0])
 
-	self.Ppid, _ = strconv.Atoi(fields[3])
+	self.Ppid, _ = strconv.Atoi(fields[3]) //nolint:errcheck
 
-	self.Tty, _ = strconv.Atoi(fields[6])
+	self.Tty, _ = strconv.Atoi(fields[6]) //nolint:errcheck
 
-	self.Priority, _ = strconv.Atoi(fields[17])
+	self.Priority, _ = strconv.Atoi(fields[17]) //nolint:errcheck
 
-	self.Nice, _ = strconv.Atoi(fields[18])
+	self.Nice, _ = strconv.Atoi(fields[18]) //nolint:errcheck
 
-	self.Processor, _ = strconv.Atoi(fields[38])
+	self.Processor, _ = strconv.Atoi(fields[38]) //nolint:errcheck
 
 	return nil
 }
 
-func (self *ProcMem) Get(pid int) error {
+func (self *ProcMem) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "statm")
 	if err != nil {
 		return err
@@ -349,13 +348,13 @@ func (self *ProcMem) Get(pid int) error {
 
 	fields := strings.Fields(string(contents))
 
-	size, _ := strtoull(fields[0])
+	size, _ := strtoull(fields[0]) //nolint:errcheck
 	self.Size = size << 12
 
-	rss, _ := strtoull(fields[1])
+	rss, _ := strtoull(fields[1]) //nolint:errcheck
 	self.Resident = rss << 12
 
-	share, _ := strtoull(fields[2])
+	share, _ := strtoull(fields[2]) //nolint:errcheck
 	self.Share = share << 12
 
 	contents, err = readProcFile(pid, "stat")
@@ -365,14 +364,14 @@ func (self *ProcMem) Get(pid int) error {
 
 	fields = strings.Fields(string(contents))
 
-	self.MinorFaults, _ = strtoull(fields[10])
-	self.MajorFaults, _ = strtoull(fields[12])
+	self.MinorFaults, _ = strtoull(fields[10]) //nolint:errcheck
+	self.MajorFaults, _ = strtoull(fields[12]) //nolint:errcheck
 	self.PageFaults = self.MinorFaults + self.MajorFaults
 
 	return nil
 }
 
-func (self *ProcTime) Get(pid int) error {
+func (self *ProcTime) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "stat")
 	if err != nil {
 		return err
@@ -380,15 +379,15 @@ func (self *ProcTime) Get(pid int) error {
 
 	fields := strings.Fields(string(contents))
 
-	user, _ := strtoull(fields[13])
-	sys, _ := strtoull(fields[14])
+	user, _ := strtoull(fields[13]) //nolint:errcheck
+	sys, _ := strtoull(fields[14])  //nolint:errcheck
 	// convert to millis
 	self.User = user * (1000 / system.ticks)
 	self.Sys = sys * (1000 / system.ticks)
 	self.Total = self.User + self.Sys
 
 	// convert to millis
-	self.StartTime, _ = strtoull(fields[21])
+	self.StartTime, _ = strtoull(fields[21]) //nolint:errcheck
 	self.StartTime /= system.ticks
 	self.StartTime += system.btime
 	self.StartTime *= 1000
@@ -396,7 +395,7 @@ func (self *ProcTime) Get(pid int) error {
 	return nil
 }
 
-func (self *ProcArgs) Get(pid int) error {
+func (self *ProcArgs) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "cmdline")
 	if err != nil {
 		return err
@@ -419,7 +418,7 @@ func (self *ProcArgs) Get(pid int) error {
 	return nil
 }
 
-func (self *ProcExe) Get(pid int) error {
+func (self *ProcExe) Get(pid int) error { //nolint:staticcheck
 	fields := map[string]*string{
 		"exe":  &self.Name,
 		"cwd":  &self.Cwd,
@@ -441,7 +440,7 @@ func (self *ProcExe) Get(pid int) error {
 
 func determineSwapUsage(cgroup string) (uint64, error) {
 	// Check v2 over v1
-	usageAsString, err := ioutil.ReadFile(Sysd2 + cgroup + "/memory.swap.current")
+	usageAsString, err := os.ReadFile(Sysd2 + cgroup + "/memory.swap.current")
 	if err == nil {
 		return strtoull(strings.Split(string(usageAsString), "\n")[0])
 	}
@@ -465,7 +464,7 @@ func determineSwapUsage(cgroup string) (uint64, error) {
 
 func determineMemoryUsage(cgroup string) (uint64, error) {
 	// Check v2 over v1
-	usageAsString, err := ioutil.ReadFile(Sysd2 + cgroup + "/memory.current")
+	usageAsString, err := os.ReadFile(Sysd2 + cgroup + "/memory.current")
 	if err == nil {
 		return strtoull(strings.Split(string(usageAsString), "\n")[0])
 	}
@@ -488,7 +487,7 @@ func determineMemoryUsage(cgroup string) (uint64, error) {
 
 func determineMemoryLimit(cgroup string) (uint64, error) {
 	// Check v2 over v1
-	limitAsString, err := ioutil.ReadFile(Sysd2 + cgroup + "/memory.high")
+	limitAsString, err := os.ReadFile(Sysd2 + cgroup + "/memory.high")
 	if err == nil {
 		val := strings.Split(string(limitAsString), "\n")[0]
 		if val == "max" {
@@ -498,7 +497,7 @@ func determineMemoryLimit(cgroup string) (uint64, error) {
 		return strtoull(val)
 	}
 
-	limitAsString, err = ioutil.ReadFile(Sysd1 + cgroup + "/memory.limit_in_bytes")
+	limitAsString, err = os.ReadFile(Sysd1 + cgroup + "/memory.limit_in_bytes")
 	if string(limitAsString) != UnlimitedMemorySize && err == nil {
 		return strtoull(strings.Split(string(limitAsString), "\n")[0])
 	}
@@ -606,20 +605,20 @@ func parseCgroupMeminfo(cgroupDir string, table map[string]*uint64) (error, bool
 func parseCpuStat(self *Cpu, line string) error {
 	fields := strings.Fields(line)
 
-	self.User, _ = strtoull(fields[1])
-	self.Nice, _ = strtoull(fields[2])
-	self.Sys, _ = strtoull(fields[3])
-	self.Idle, _ = strtoull(fields[4])
-	self.Wait, _ = strtoull(fields[5])
-	self.Irq, _ = strtoull(fields[6])
-	self.SoftIrq, _ = strtoull(fields[7])
-	self.Stolen, _ = strtoull(fields[8])
+	self.User, _ = strtoull(fields[1])    //nolint:errcheck
+	self.Nice, _ = strtoull(fields[2])    //nolint:errcheck
+	self.Sys, _ = strtoull(fields[3])     //nolint:errcheck
+	self.Idle, _ = strtoull(fields[4])    //nolint:errcheck
+	self.Wait, _ = strtoull(fields[5])    //nolint:errcheck
+	self.Irq, _ = strtoull(fields[6])     //nolint:errcheck
+	self.SoftIrq, _ = strtoull(fields[7]) //nolint:errcheck
+	self.Stolen, _ = strtoull(fields[8])  //nolint:errcheck
 
 	return nil
 }
 
 func readFile(file string, handler func(string) bool) error {
-	contents, err := ioutil.ReadFile(file)
+	contents, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -649,7 +648,7 @@ func procFileName(pid int, name string) string {
 
 func readProcFile(pid int, name string) ([]byte, error) {
 	path := procFileName(pid, name)
-	contents, err := ioutil.ReadFile(path)
+	contents, err := os.ReadFile(path)
 
 	if err != nil {
 		if perr, ok := err.(*os.PathError); ok {
@@ -664,7 +663,7 @@ func readProcFile(pid int, name string) ([]byte, error) {
 
 func determineControllerMounts(sysd1, sysd2 *string) {
 	// grab cgroup controller mount points
-	readFile(Procd+"/self/mounts", func(line string) bool {
+	readFile(Procd+"/self/mounts", func(line string) bool { //nolint:errcheck
 
 		// Entries have the form `device path type options`.
 		// The elements are separated by single spaces.

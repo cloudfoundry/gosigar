@@ -1,0 +1,31 @@
+---
+name: go
+on: [push, pull_request]
+jobs:
+  lint: # <- name
+    strategy:
+      matrix:
+        os: [macos-latest, windows-2019, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: golangci/golangci-lint-action@v7
+
+  test-unit: # <- name
+    strategy:
+      matrix:
+        # TODO: enable macos [macos-latest, windows-2019, ubuntu-latest]
+        os: [windows-2019, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: go.mod
+    - run: go run github.com/onsi/ginkgo/v2/ginkgo run -r --race --keep-going ./...
+      if: ${{ matrix.os != 'windows-2019' }}
+    - run: go run github.com/onsi/ginkgo/v2/ginkgo run -r --race --keep-going --output-interceptor-mode=none --skip-package=psnotify -v ./...
+      if: ${{ matrix.os == 'windows-2019' }}

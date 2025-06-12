@@ -15,18 +15,18 @@ func main() {
 	mem := sigar.Mem{}
 	swap := sigar.Swap{}
 
-	mem.Get()
-	swap.Get()
+	mem.Get()  //nolint:errcheck
+	swap.Get() //nolint:errcheck
 
-	fmt.Fprintf(os.Stdout, "%18s %10s %10s\n",
+	fmt.Fprintf(os.Stdout, "%18s %10s %10s\n", //nolint:errcheck
 		"total", "used", "free")
 
-	fmt.Fprintf(os.Stdout, "Mem:    %10d %10d %10d\n",
+	fmt.Fprintf(os.Stdout, "Mem:    %10d %10d %10d\n", //nolint:errcheck
 		format(mem.Total), format(mem.Used), format(mem.Free))
 
-	fmt.Fprintf(os.Stdout, "-/+ buffers/cache: %10d %10d\n",
+	fmt.Fprintf(os.Stdout, "-/+ buffers/cache: %10d %10d\n", //nolint:errcheck
 		format(mem.ActualUsed), format(mem.ActualFree))
 
-	fmt.Fprintf(os.Stdout, "Swap:   %10d %10d %10d\n",
+	fmt.Fprintf(os.Stdout, "Swap:   %10d %10d %10d\n", //nolint:errcheck
 		format(swap.Total), format(swap.Used), format(swap.Free))
 }

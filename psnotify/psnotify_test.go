@@ -1,3 +1,4 @@
+//go:build darwin || freebsd || linux || netbsd || openbsd
 // +build darwin freebsd linux netbsd openbsd
 
 package psnotify
@@ -43,7 +44,7 @@ func (a *anyEvent) getExits() []int {
 	defer a.m.Unlock()
 
 	r := make([]int, len(a.exits))
-	for i, v := range a.exits {
+	for i, v := range a.exits { //nolint:staticcheck
 		r[i] = v
 	}
 	return r
@@ -54,7 +55,7 @@ func (a *anyEvent) getForks() []int {
 	defer a.m.Unlock()
 
 	r := make([]int, len(a.forks))
-	for i, v := range a.forks {
+	for i, v := range a.forks { //nolint:staticcheck
 		r[i] = v
 	}
 	return r
@@ -65,18 +66,18 @@ func (a *anyEvent) getExecs() []int {
 	defer a.m.Unlock()
 
 	r := make([]int, len(a.execs))
-	for i, v := range a.execs {
+	for i, v := range a.execs { //nolint:staticcheck
 		r[i] = v
 	}
 	return r
 }
 
-func (a *anyEvent) getErrors() []error {
+func (a *anyEvent) getErrors() []error { //nolint:staticcheck,unused
 	a.m.Lock()
 	defer a.m.Unlock()
 
 	r := make([]error, len(a.errors))
-	for i, v := range a.errors {
+	for i, v := range a.errors { //nolint:staticcheck
 		r[i] = v
 	}
 	return r
@@ -131,7 +132,7 @@ func (tw *testWatcher) close() {
 
 	tw.events.done <- true
 
-	tw.watcher.Close()
+	tw.watcher.Close() //nolint:errcheck
 
 	time.Sleep(pause)
 }
@@ -224,9 +225,9 @@ func TestWatchExit(t *testing.T) {
 	}
 
 	// kill our child process, triggers exit event
-	syscall.Kill(childPid, syscall.SIGTERM)
+	syscall.Kill(childPid, syscall.SIGTERM) //nolint:errcheck
 
-	cmd.Wait()
+	cmd.Wait() //nolint:errcheck
 
 	tw.close()
 
@@ -261,9 +262,9 @@ func TestWatchForkAndExit(t *testing.T) {
 		t.Error(err)
 	}
 
-	syscall.Kill(childPid, syscall.SIGTERM)
+	syscall.Kill(childPid, syscall.SIGTERM) //nolint:errcheck
 
-	cmd.Wait()
+	cmd.Wait() //nolint:errcheck
 
 	tw.close()
 
@@ -309,7 +310,7 @@ func TestWatchFollowFork(t *testing.T) {
 	}
 
 	// remove watch for this process
-	tw.watcher.RemoveWatch(pid)
+	tw.watcher.RemoveWatch(pid) //nolint:errcheck
 
 	// run commands again to make sure we don't receive any unwanted events
 	for _, name := range commands {
