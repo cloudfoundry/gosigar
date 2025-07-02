@@ -4,9 +4,10 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/cloudfoundry/gosigar"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	sigar "github.com/cloudfoundry/gosigar"
 )
 
 var _ = Describe("ConcreteSigar", func() {

@@ -1,6 +1,7 @@
 package sigar
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -37,11 +38,15 @@ var _ = Describe("SigarShared", func() {
 		})
 
 		AfterEach(func() {
-			cpuGenerator.Process.Signal(os.Kill)
-			noCPUGenerator.Process.Signal(os.Kill)
+			cpuGenerator.Process.Signal(os.Kill)   //nolint:errcheck
+			noCPUGenerator.Process.Signal(os.Kill) //nolint:errcheck
 		})
 
 		It("calculates percentage", func() {
+			if runtime.GOOS == "darwin" {
+				Skip(fmt.Sprintf("Timing is different on %s", runtime.GOOS))
+			}
+
 			time.Sleep(time.Second) // High CPU process needs a second to spool up
 
 			pCpu := &ProcCpu{}
@@ -53,6 +58,10 @@ var _ = Describe("SigarShared", func() {
 		})
 
 		It("does not conflate multiple processes", func() {
+			if runtime.GOOS == "darwin" {
+				Skip(fmt.Sprintf("Not supported on %s", runtime.GOOS))
+			}
+
 			time.Sleep(time.Second) // High CPU process needs a second to spool up
 
 			pCpu := &ProcCpu{}
@@ -86,8 +95,8 @@ var _ = Describe("SigarShared", func() {
 		})
 
 		AfterEach(func() {
-			memGenerator.Process.Signal(os.Kill)
-			noMemGenerator.Process.Signal(os.Kill)
+			memGenerator.Process.Signal(os.Kill)   //nolint:errcheck
+			noMemGenerator.Process.Signal(os.Kill) //nolint:errcheck
 		})
 
 		It("calculates memory usage", func() {

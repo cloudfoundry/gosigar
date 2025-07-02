@@ -8,7 +8,7 @@ import (
 
 func main() {
 	pids := sigar.ProcList{}
-	pids.Get()
+	pids.Get() //nolint:errcheck
 
 	// ps -eo pid,ppid,stime,time,rss,state,comm
 	fmt.Print("    PID    PPID STIME     TIME   RSS S COMMAND\n")

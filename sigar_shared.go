@@ -1,8 +1,10 @@
 package sigar
 
-import "time"
+import (
+	"time"
+)
 
-func (self *ProcCpu) Get(pid int) error {
+func (self *ProcCpu) Get(pid int) error { //nolint:staticcheck
 	if self.cache == nil {
 		self.cache = make(map[int]ProcCpu)
 	}
