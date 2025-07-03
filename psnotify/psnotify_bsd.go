@@ -1,3 +1,4 @@
+//go:build darwin || freebsd || netbsd || openbsd
 // +build darwin freebsd netbsd openbsd
 
 // Go interface to BSD kqueue process events.
@@ -78,7 +79,7 @@ func (w *Watcher) readEvents() {
 			case syscall.NOTE_EXEC:
 				w.Exec <- &ProcEventExec{Pid: pid}
 			case syscall.NOTE_EXIT:
-				w.RemoveWatch(pid)
+				w.RemoveWatch(pid) //nolint:errcheck
 				w.Exit <- &ProcEventExit{Pid: pid}
 			}
 		}

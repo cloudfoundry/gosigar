@@ -126,7 +126,7 @@ func (w *Watcher) readEvents() {
 			continue
 		}
 
-		msgs, _ := syscall.ParseNetlinkMessage(buf[:nr])
+		msgs, _ := syscall.ParseNetlinkMessage(buf[:nr]) //nolint:errcheck
 
 		for _, m := range msgs {
 			if m.Header.Type == syscall.NLMSG_DONE {
@@ -155,20 +155,20 @@ func (w *Watcher) handleEvent(data []byte) {
 	msg := &cnMsg{}
 	hdr := &procEventHeader{}
 
-	binary.Read(buf, byteOrder, msg)
-	binary.Read(buf, byteOrder, hdr)
+	binary.Read(buf, byteOrder, msg) //nolint:errcheck
+	binary.Read(buf, byteOrder, hdr) //nolint:errcheck
 
 	switch hdr.What {
 	case PROC_EVENT_FORK:
 		event := &forkProcEvent{}
-		binary.Read(buf, byteOrder, event)
+		binary.Read(buf, byteOrder, event) //nolint:errcheck
 		ppid := int(event.ParentTgid)
 		pid := int(event.ChildTgid)
 
 		if w.isWatching(ppid, PROC_EVENT_EXEC) {
 			// follow forks
-			watch, _ := w.watches[ppid]
-			w.Watch(pid, watch.flags)
+			watch, _ := w.watches[ppid] //nolint:errcheck,staticcheck
+			w.Watch(pid, watch.flags)   //nolint:errcheck
 		}
 
 		if w.isWatching(ppid, PROC_EVENT_FORK) {
@@ -176,7 +176,7 @@ func (w *Watcher) handleEvent(data []byte) {
 		}
 	case PROC_EVENT_EXEC:
 		event := &execProcEvent{}
-		binary.Read(buf, byteOrder, event)
+		binary.Read(buf, byteOrder, event) //nolint:errcheck
 		pid := int(event.ProcessTgid)
 
 		if w.isWatching(pid, PROC_EVENT_EXEC) {
@@ -184,11 +184,11 @@ func (w *Watcher) handleEvent(data []byte) {
 		}
 	case PROC_EVENT_EXIT:
 		event := &exitProcEvent{}
-		binary.Read(buf, byteOrder, event)
+		binary.Read(buf, byteOrder, event) //nolint:errcheck
 		pid := int(event.ProcessTgid)
 
 		if w.isWatching(pid, PROC_EVENT_EXIT) {
-			w.RemoveWatch(pid)
+			w.RemoveWatch(pid) //nolint:errcheck
 			w.Exit <- &ProcEventExit{Pid: pid}
 		}
 	}
@@ -225,7 +225,7 @@ func (listener *netlinkListener) bind() error {
 // and close our netlink socket.
 func (listener *netlinkListener) close() error {
 	err := listener.send(_PROC_CN_MCAST_IGNORE)
-	syscall.Close(listener.sock)
+	syscall.Close(listener.sock) //nolint:errcheck
 	return err
 }
 
@@ -247,8 +247,8 @@ func (listener *netlinkListener) send(op uint32) error {
 	pr.Data.Len = uint16(binary.Size(op))
 
 	buf := bytes.NewBuffer(make([]byte, 0, pr.Header.Len))
-	binary.Write(buf, byteOrder, pr)
-	binary.Write(buf, byteOrder, op)
+	binary.Write(buf, byteOrder, pr) //nolint:errcheck
+	binary.Write(buf, byteOrder, op) //nolint:errcheck
 
 	return syscall.Sendto(listener.sock, buf.Bytes(), 0, listener.addr)
 }

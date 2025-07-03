@@ -16,8 +16,8 @@ func FormatSize(size uint64) string {
 	w := bufio.NewWriter(buf)
 
 	if size < 973 {
-		fmt.Fprintf(w, "%3d ", size)
-		w.Flush()
+		fmt.Fprintf(w, "%3d ", size) //nolint:errcheck
+		w.Flush()                    //nolint:errcheck
 		return buf.String()
 	}
 
@@ -37,7 +37,7 @@ func FormatSize(size uint64) string {
 				remain = 0
 			}
 
-			fmt.Fprintf(w, "%d.%d%s", size, remain, ord[o])
+			fmt.Fprintf(w, "%d.%d%s", size, remain, ord[o]) //nolint:errcheck
 			break
 		}
 
@@ -45,11 +45,11 @@ func FormatSize(size uint64) string {
 			size++
 		}
 
-		fmt.Fprintf(w, "%3d%s", size, ord[o])
+		fmt.Fprintf(w, "%3d%s", size, ord[o]) //nolint:errcheck
 		break
 	}
 
-	w.Flush()
+	w.Flush() //nolint:errcheck
 	return buf.String()
 }
 
@@ -57,7 +57,7 @@ func FormatPercent(percent float64) string {
 	return strconv.FormatFloat(percent, 'f', -1, 64) + "%"
 }
 
-func (self *FileSystemUsage) UsePercent() float64 {
+func (self *FileSystemUsage) UsePercent() float64 { //nolint:staticcheck
 	b_used := (self.Total - self.Free) / 1024
 	b_avail := self.Avail / 1024
 	utotal := b_used + b_avail
@@ -75,7 +75,7 @@ func (self *FileSystemUsage) UsePercent() float64 {
 	return 0.0
 }
 
-func (self *Uptime) Format() string {
+func (self *Uptime) Format() string { //nolint:staticcheck
 	buf := new(bytes.Buffer)
 	w := bufio.NewWriter(buf)
 	uptime := uint64(self.Length)
@@ -87,7 +87,7 @@ func (self *Uptime) Format() string {
 		if days > 1 {
 			s = "s"
 		}
-		fmt.Fprintf(w, "%d day%s, ", days, s)
+		fmt.Fprintf(w, "%d day%s, ", days, s) //nolint:errcheck
 	}
 
 	minutes := uptime / 60
@@ -95,13 +95,13 @@ func (self *Uptime) Format() string {
 	hours %= 24
 	minutes %= 60
 
-	fmt.Fprintf(w, "%2d:%02d", hours, minutes)
+	fmt.Fprintf(w, "%2d:%02d", hours, minutes) //nolint:errcheck
 
-	w.Flush()
+	w.Flush() //nolint:errcheck
 	return buf.String()
 }
 
-func (self *ProcTime) FormatStartTime() string {
+func (self *ProcTime) FormatStartTime() string { //nolint:staticcheck
 	if self.StartTime == 0 {
 		return "00:00"
 	}
@@ -113,7 +113,7 @@ func (self *ProcTime) FormatStartTime() string {
 	return start.Format(format)
 }
 
-func (self *ProcTime) FormatTotal() string {
+func (self *ProcTime) FormatTotal() string { //nolint:staticcheck
 	t := self.Total / 1000
 	ss := t % 60
 	t /= 60

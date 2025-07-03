@@ -9,8 +9,9 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/cloudfoundry/gosigar/sys/windows"
 	"github.com/pkg/errors"
+
+	"github.com/cloudfoundry/gosigar/sys/windows"
 )
 
 var (
@@ -27,11 +28,11 @@ var (
 	processQueryLimitedInfoAccess = windows.PROCESS_QUERY_LIMITED_INFORMATION
 )
 
-func (self *LoadAverage) Get() error {
+func (self *LoadAverage) Get() error { //nolint:staticcheck
 	return ErrNotImplemented
 }
 
-func (u *Uptime) Get() error {
+func (u *Uptime) Get() error { //nolint:staticcheck
 	r1, _, e1 := syscall.SyscallN(procGetTickCount64.Addr())
 	if e1 != 0 {
 		return error(e1)
@@ -52,7 +53,7 @@ type memorystatusex struct {
 	AvailExtendedVirtual uint64
 }
 
-func (m *Mem) Get() error {
+func (m *Mem) Get() error { //nolint:staticcheck
 	var x memorystatusex
 	x.Length = uint32(unsafe.Sizeof(x))
 	r1, _, e1 := syscall.SyscallN(procGlobalMemoryStatusEx.Addr(),
@@ -69,11 +70,11 @@ func (m *Mem) Get() error {
 	return nil
 }
 
-func (m *Mem) GetIgnoringCGroups() error {
+func (m *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
 	return m.Get()
 }
 
-func (s *Swap) Get() error {
+func (s *Swap) Get() error { //nolint:staticcheck
 	const MB = 1024 * 1024
 	out, err := exec.Command("wmic", "pagefile", "list", "full").Output()
 	if err != nil {
@@ -105,7 +106,7 @@ func parseWmicOutput(s, sep []byte) (uint64, error) {
 	return 0, errors.New("parseWmicOutput: missing field: " + string(sep))
 }
 
-func (c *Cpu) Get() error {
+func (c *Cpu) Get() error { //nolint:staticcheck
 	var (
 		idleTime   syscall.Filetime
 		kernelTime syscall.Filetime // Includes kernel and idle time.
@@ -126,28 +127,28 @@ func (c *Cpu) Get() error {
 	return nil
 }
 
-func (self *CpuList) Get() error {
+func (self *CpuList) Get() error { //nolint:staticcheck
 	return ErrNotImplemented
 }
 
-func (self *FileSystemList) Get() error {
+func (self *FileSystemList) Get() error { //nolint:staticcheck
 	return ErrNotImplemented
 }
 
-func (self *ProcList) Get() error {
+func (self *ProcList) Get() error { //nolint:staticcheck
 	return ErrNotImplemented
 }
 
-func (self *ProcState) Get(pid int) error {
+func (self *ProcState) Get(pid int) error { //nolint:staticcheck
 	return ErrNotImplemented
 }
 
-func (self *ProcMem) Get(pid int) error {
+func (self *ProcMem) Get(pid int) error { //nolint:staticcheck
 	handle, err := syscall.OpenProcess(processQueryLimitedInfoAccess|windows.PROCESS_VM_READ, false, uint32(pid))
 	if err != nil {
 		return errors.Wrapf(err, "OpenProcess failed for pid=%v", pid)
 	}
-	defer syscall.CloseHandle(handle)
+	defer syscall.CloseHandle(handle) //nolint:errcheck
 
 	counters, err := windows.GetProcessMemoryInfo(handle)
 	if err != nil {
@@ -159,12 +160,12 @@ func (self *ProcMem) Get(pid int) error {
 	return nil
 }
 
-func (self *ProcTime) Get(pid int) error {
+func (self *ProcTime) Get(pid int) error { //nolint:staticcheck
 	handle, err := syscall.OpenProcess(processQueryLimitedInfoAccess, false, uint32(pid))
 	if err != nil {
 		return errors.Wrapf(err, "OpenProcess failed for pid=%v", pid)
 	}
-	defer syscall.CloseHandle(handle)
+	defer syscall.CloseHandle(handle) //nolint:errcheck
 
 	var CPU syscall.Rusage
 	if err := syscall.GetProcessTimes(handle, &CPU.CreationTime, &CPU.ExitTime, &CPU.KernelTime, &CPU.UserTime); err != nil {
@@ -184,15 +185,15 @@ func (self *ProcTime) Get(pid int) error {
 	return nil
 }
 
-func (self *ProcArgs) Get(pid int) error {
+func (self *ProcArgs) Get(pid int) error { //nolint:staticcheck
 	return ErrNotImplemented
 }
 
-func (self *ProcExe) Get(pid int) error {
+func (self *ProcExe) Get(pid int) error { //nolint:staticcheck
 	return ErrNotImplemented
 }
 
-func (fs *FileSystemUsage) Get(path string) error {
+func (fs *FileSystemUsage) Get(path string) error { //nolint:staticcheck
 	root, err := syscall.UTF16PtrFromString(path)
 	if err != nil {
 		return fmt.Errorf("FileSystemUsage (%s): %s", path, err)
