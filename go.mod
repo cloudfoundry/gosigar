@@ -3,7 +3,7 @@ module github.com/cloudfoundry/gosigar
 go 1.23.0
 
 require (
-	github.com/onsi/ginkgo/v2 v2.25.2
+	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
