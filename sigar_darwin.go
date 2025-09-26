@@ -23,6 +23,8 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
 func (self *LoadAverage) Get() error { //nolint:staticcheck
@@ -417,21 +419,22 @@ func vm_info(vmstat *C.vm_statistics_data_t) error {
 
 // generic Sysctl buffer unmarshalling
 func sysctlbyname(name string, data interface{}) (err error) {
-	val, err := syscall.Sysctl(name)
-	if err != nil {
-		return err
-	}
-
-	buf := []byte(val)
-
 	switch v := data.(type) {
 	case *uint64:
-		*v = *(*uint64)(unsafe.Pointer(&buf[0]))
-		return
+		res, err := unix.SysctlUint64(name)
+		if err != nil {
+			return err
+		}
+		*v = res
+		return nil
+	default:
+		val, err := syscall.Sysctl(name)
+		if err != nil {
+			return err
+		}
+		bbuf := bytes.NewBuffer([]byte(val))
+		return binary.Read(bbuf, binary.LittleEndian, data)
 	}
-
-	bbuf := bytes.NewBuffer([]byte(val))
-	return binary.Read(bbuf, binary.LittleEndian, data)
 }
 
 // syscall.Getfsstat() wrapper is broken, roll our own to workaround.
