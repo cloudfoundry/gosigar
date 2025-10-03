@@ -361,6 +361,122 @@ func Process32Next(handle syscall.Handle) (ProcessEntry32, error) {
 	return processEntry32, nil
 }
 
+type UnicodeString struct {
+	Length        uint16
+	MaximumLength uint16
+	Buffer        uintptr
+}
+
+type RtlUserProcessParameters struct {
+	Reserved1     [16]byte
+	Reserved2     [10]uintptr
+	ImagePathName UnicodeString
+	CommandLine   UnicodeString
+}
+
+type ProcessBasicInformation struct {
+	Reserved1       uintptr
+	PebBaseAddress  uintptr
+	Reserved2       uintptr
+	Reserved3       uintptr
+	UniqueProcessID uintptr
+	Reserved4       uintptr
+}
+
+func NtQueryProcessBasicInformation(handle syscall.Handle) (*ProcessBasicInformation, error) {
+	const processBasicInformation = 0
+	pbi := &ProcessBasicInformation{}
+	size := uint32(unsafe.Sizeof(*pbi))
+	var returnLength uint32
+
+	ntstatus, err := _NtQueryInformationProcess(handle, processBasicInformation, (*byte)(unsafe.Pointer(pbi)), size, &returnLength)
+	if ntstatus != 0 {
+		return nil, errors.Wrapf(err, "NtQueryInformationProcess failed with NTSTATUS=%x", ntstatus)
+	}
+
+	return pbi, nil
+}
+
+func GetUserProcessParams(handle syscall.Handle, pbi *ProcessBasicInformation) (*RtlUserProcessParameters, error) {
+	const pebUserProcessParametersOffset = 0x20
+	userProcParamsAddr := pbi.PebBaseAddress + pebUserProcessParametersOffset
+	
+	var userProcParamsPtr uintptr
+	err := ReadProcessMemory(handle, userProcParamsAddr, (*byte)(unsafe.Pointer(&userProcParamsPtr)), unsafe.Sizeof(userProcParamsPtr))
+	if err != nil {
+		return nil, errors.Wrap(err, "ReadProcessMemory failed for user process parameters pointer")
+	}
+
+	userProcParams := &RtlUserProcessParameters{}
+	err = ReadProcessMemory(handle, userProcParamsPtr, (*byte)(unsafe.Pointer(userProcParams)), unsafe.Sizeof(*userProcParams))
+	if err != nil {
+		return nil, errors.Wrap(err, "ReadProcessMemory failed for user process parameters")
+	}
+
+	return userProcParams, nil
+}
+
+func ReadProcessUnicodeString(handle syscall.Handle, s *UnicodeString) ([]byte, error) {
+	if s.Length == 0 || s.Buffer == 0 {
+		return nil, errors.New("UnicodeString is empty")
+	}
+
+	buf := make([]byte, s.Length)
+	err := ReadProcessMemory(handle, s.Buffer, &buf[0], uintptr(s.Length))
+	if err != nil {
+		return nil, errors.Wrap(err, "ReadProcessMemory failed for UnicodeString")
+	}
+
+	return buf, nil
+}
+
+func ByteSliceToStringSlice(buf []byte) ([]string, error) {
+	if len(buf) == 0 {
+		return nil, errors.New("empty buffer")
+	}
+
+	words := make([]uint16, len(buf)/2)
+	for i := range words {
+		words[i] = uint16(buf[i*2]) | uint16(buf[i*2+1])<<8
+	}
+
+	var args []string
+	var start int
+	for i, w := range words {
+		if w == 0 {
+			if i > start {
+				args = append(args, syscall.UTF16ToString(words[start:i]))
+			}
+			start = i + 1
+		}
+	}
+	if start < len(words) {
+		args = append(args, syscall.UTF16ToString(words[start:]))
+	}
+
+	return args, nil
+}
+
+func ReadProcessMemory(handle syscall.Handle, baseAddress uintptr, dest *byte, size uintptr) error {
+	var numRead uintptr
+	err := _ReadProcessMemory(handle, baseAddress, dest, size, &numRead)
+	if err != nil {
+		return errors.Wrap(err, "ReadProcessMemory failed")
+	}
+	if numRead != size {
+		return errors.Errorf("ReadProcessMemory read %d bytes, expected %d", numRead, size)
+	}
+	return nil
+}
+
+func GetTickCount64() (uint64, error) {
+	ticks, err := _GetTickCount64()
+	if err != nil {
+		return 0, errors.Wrap(err, "GetTickCount64 failed")
+	}
+	return ticks, nil
+}
+
 // Use "GOOS=windows go generate -v -x ." to generate the source.
 
 // Add -trace to enable debug prints around syscalls.
@@ -383,3 +499,5 @@ func Process32Next(handle syscall.Handle) (ProcessEntry32, error) {
 //sys   _LookupPrivilegeName(systemName string, luid *int64, buffer *uint16, size *uint32) (err error) = advapi32.LookupPrivilegeNameW
 //sys   _LookupPrivilegeValue(systemName string, name string, luid *int64) (err error) = advapi32.LookupPrivilegeValueW
 //sys   _AdjustTokenPrivileges(token syscall.Token, releaseAll bool, input *byte, outputSize uint32, output *byte, requiredSize *uint32) (success bool, err error) [true] = advapi32.AdjustTokenPrivileges
+//sys   _ReadProcessMemory(handle syscall.Handle, baseAddress uintptr, buffer *byte, size uintptr, numRead *uintptr) (err error) = kernel32.ReadProcessMemory
+//sys   _GetTickCount64() (milliseconds uint64, err error) = kernel32.GetTickCount64
