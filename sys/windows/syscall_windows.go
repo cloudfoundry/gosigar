@@ -374,30 +374,7 @@ type RtlUserProcessParameters struct {
 	CommandLine   UnicodeString
 }
 
-type ProcessBasicInformation struct {
-	Reserved1       uintptr
-	PebBaseAddress  uintptr
-	Reserved2       uintptr
-	Reserved3       uintptr
-	UniqueProcessID uintptr
-	Reserved4       uintptr
-}
-
-func NtQueryProcessBasicInformation(handle syscall.Handle) (*ProcessBasicInformation, error) {
-	const processBasicInformation = 0
-	pbi := &ProcessBasicInformation{}
-	size := uint32(unsafe.Sizeof(*pbi))
-	var returnLength uint32
-
-	ntstatus, err := _NtQueryInformationProcess(handle, processBasicInformation, (*byte)(unsafe.Pointer(pbi)), size, &returnLength)
-	if ntstatus != 0 {
-		return nil, errors.Wrapf(err, "NtQueryInformationProcess failed with NTSTATUS=%x", ntstatus)
-	}
-
-	return pbi, nil
-}
-
-func GetUserProcessParams(handle syscall.Handle, pbi *ProcessBasicInformation) (*RtlUserProcessParameters, error) {
+func GetUserProcessParams(handle syscall.Handle, pbi ProcessBasicInformation) (*RtlUserProcessParameters, error) {
 	const pebUserProcessParametersOffset = 0x20
 	userProcParamsAddr := pbi.PebBaseAddress + pebUserProcessParametersOffset
 	
