@@ -186,7 +186,26 @@ func (self *ProcTime) Get(pid int) error { //nolint:staticcheck
 }
 
 func (self *ProcArgs) Get(pid int) error { //nolint:staticcheck
-	return ErrNotImplemented
+	handle, err := syscall.OpenProcess(processQueryLimitedInfoAccess|windows.PROCESS_VM_READ, false, uint32(pid))
+	if err != nil {
+		return errors.Wrapf(err, "OpenProcess failed for pid=%v", pid)
+	}
+	defer syscall.CloseHandle(handle) //nolint:errcheck
+	pbi, err := windows.NtQueryProcessBasicInformation(handle)
+	if err != nil {
+		return errors.Wrapf(err, "NtQueryProcessBasicInformation failed for pid=%v", pid)
+	}
+	userProcParams, err := windows.GetUserProcessParams(handle, pbi)
+	if err != nil {
+		return nil
+	}
+	if argsW, err := windows.ReadProcessUnicodeString(handle, &userProcParams.CommandLine); err == nil {
+		self.List, err = windows.ByteSliceToStringSlice(argsW)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (self *ProcExe) Get(pid int) error { //nolint:staticcheck
