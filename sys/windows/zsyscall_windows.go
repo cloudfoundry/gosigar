@@ -31,6 +31,8 @@ var (
 	procLookupPrivilegeNameW      = modadvapi32.NewProc("LookupPrivilegeNameW")
 	procLookupPrivilegeValueW     = modadvapi32.NewProc("LookupPrivilegeValueW")
 	procAdjustTokenPrivileges     = modadvapi32.NewProc("AdjustTokenPrivileges")
+	procReadProcessMemory         = modkernel32.NewProc("ReadProcessMemory")
+	procGetTickCount64            = modkernel32.NewProc("GetTickCount64")
 )
 
 func _GlobalMemoryStatusEx(buffer *MemoryStatusEx) (err error) {
@@ -252,6 +254,31 @@ func _AdjustTokenPrivileges(token syscall.Token, releaseAll bool, input *byte, o
 	r0, _, e1 := syscall.SyscallN(procAdjustTokenPrivileges.Addr(), uintptr(token), uintptr(_p0), uintptr(unsafe.Pointer(input)), uintptr(outputSize), uintptr(unsafe.Pointer(output)), uintptr(unsafe.Pointer(requiredSize)))
 	success = r0 != 0
 	if true {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func _ReadProcessMemory(handle syscall.Handle, baseAddress uintptr, buffer *byte, size uintptr, numRead *uintptr) (err error) {
+	r1, _, e1 := syscall.SyscallN(procReadProcessMemory.Addr(), uintptr(handle), uintptr(baseAddress), uintptr(unsafe.Pointer(buffer)), uintptr(size), uintptr(unsafe.Pointer(numRead)))
+	if r1 == 0 {
+		if e1 != 0 {
+			err = error(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func _GetTickCount64() (milliseconds uint64, err error) {
+	r0, _, e1 := syscall.SyscallN(procGetTickCount64.Addr())
+	milliseconds = uint64(r0)
+	if milliseconds == 0 {
 		if e1 != 0 {
 			err = error(e1)
 		} else {
