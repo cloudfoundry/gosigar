@@ -377,7 +377,7 @@ type RtlUserProcessParameters struct {
 func GetUserProcessParams(handle syscall.Handle, pbi ProcessBasicInformation) (*RtlUserProcessParameters, error) {
 	const pebUserProcessParametersOffset = 0x20
 	userProcParamsAddr := pbi.PebBaseAddress + pebUserProcessParametersOffset
-	
+
 	var userProcParamsPtr uintptr
 	err := ReadProcessMemory(handle, userProcParamsAddr, (*byte)(unsafe.Pointer(&userProcParamsPtr)), unsafe.Sizeof(userProcParamsPtr))
 	if err != nil {

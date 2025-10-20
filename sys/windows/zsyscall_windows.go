@@ -203,7 +203,7 @@ func _LookupPrivilegeName(systemName string, luid *int64, buffer *uint16, size *
 	if err != nil {
 		return
 	}
-	return __LookupPrivilegeName(_p0, luid, buffer, size)
+	return
 }
 
 func __LookupPrivilegeName(systemName *uint16, luid *int64, buffer *uint16, size *uint32) (err error) {

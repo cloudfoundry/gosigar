@@ -190,7 +190,7 @@ func (self *ProcArgs) Get(pid int) error { //nolint:staticcheck
 	if err != nil {
 		return errors.Wrapf(err, "OpenProcess failed for pid=%v", pid)
 	}
-	defer syscall.CloseHandle(handle)
+	defer func() { _ = syscall.CloseHandle(handle) }()
 	pbi, err := windows.NtQueryProcessBasicInformation(handle)
 	if err != nil {
 		return errors.Wrapf(err, "NtQueryProcessBasicInformation failed for pid=%v", pid)
