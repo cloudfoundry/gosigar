@@ -12,7 +12,6 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/pkg/errors"
 	"golang.org/x/sys/windows"
 )
 
@@ -112,7 +111,7 @@ func LookupPrivilegeName(systemName string, luid int64) (string, error) {
 	bufSize := uint32(len(buf))
 	err := _LookupPrivilegeName(systemName, &luid, &buf[0], &bufSize)
 	if err != nil {
-		return "", errors.Wrapf(err, "LookupPrivilegeName failed for luid=%v", luid)
+		return "", fmt.Errorf("LookupPrivilegeName failed for luid=%v %w", luid, err)
 	}
 
 	return syscall.UTF16ToString(buf), nil
@@ -128,7 +127,7 @@ func mapPrivileges(names []string) ([]int64, error) {
 		if !ok {
 			err := _LookupPrivilegeValue("", name, &p)
 			if err != nil {
-				return nil, errors.Wrapf(err, "LookupPrivilegeValue failed on '%v'", name)
+				return nil, fmt.Errorf("LookupPrivilegeValue failed on '%v' %w", name, err)
 			}
 			privNames[name] = p
 		}
@@ -158,7 +157,7 @@ func EnableTokenPrivileges(token syscall.Token, privileges ...string) error {
 		return err
 	}
 	if err == ERROR_NOT_ALL_ASSIGNED {
-		return errors.Wrap(err, "error not all privileges were assigned")
+		return fmt.Errorf("error not all privileges were assigned %w", err)
 	}
 
 	return nil
@@ -177,13 +176,13 @@ func GetTokenPrivileges(token syscall.Token) (map[string]Privilege, error) {
 	b := bytes.NewBuffer(make([]byte, size))
 	err := syscall.GetTokenInformation(token, syscall.TokenPrivileges, &b.Bytes()[0], uint32(b.Len()), &size)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetTokenInformation failed")
+		return nil, fmt.Errorf("GetTokenInformation failed %w", err)
 	}
 
 	var privilegeCount uint32
 	err = binary.Read(b, binary.LittleEndian, &privilegeCount)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read PrivilegeCount")
+		return nil, fmt.Errorf("failed to read PrivilegeCount %w", err)
 	}
 
 	rtn := make(map[string]Privilege, privilegeCount)
@@ -191,18 +190,18 @@ func GetTokenPrivileges(token syscall.Token) (map[string]Privilege, error) {
 		var luid int64
 		err = binary.Read(b, binary.LittleEndian, &luid)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read LUID value")
+			return nil, fmt.Errorf("failed to read LUID value %w", err)
 		}
 
 		var attributes uint32
 		err = binary.Read(b, binary.LittleEndian, &attributes)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to read attributes")
+			return nil, fmt.Errorf("failed to read attributes %w", err)
 		}
 
 		name, err := LookupPrivilegeName("", luid)
 		if err != nil {
-			return nil, errors.Wrapf(err, "LookupPrivilegeName failed for LUID=%v", luid)
+			return nil, fmt.Errorf("LookupPrivilegeName failed for LUID=%v %w", luid, err)
 		}
 
 		rtn[name] = Privilege{
@@ -222,18 +221,18 @@ func GetTokenPrivileges(token syscall.Token) (map[string]Privilege, error) {
 func GetTokenUser(token syscall.Token) (User, error) {
 	tokenUser, err := token.GetTokenUser()
 	if err != nil {
-		return User{}, errors.Wrap(err, "GetTokenUser failed")
+		return User{}, fmt.Errorf("GetTokenUser failed %w", err)
 	}
 
 	var user User
 	user.SID, err = tokenUser.User.Sid.String()
 	if err != nil {
-		return user, errors.Wrap(err, "ConvertSidToStringSid failed")
+		return user, fmt.Errorf("ConvertSidToStringSid failed %w", err)
 	}
 
 	user.Account, user.Domain, user.Type, err = tokenUser.User.Sid.LookupAccount("")
 	if err != nil {
-		return user, errors.Wrap(err, "LookupAccountSid failed")
+		return user, fmt.Errorf("LookupAccountSid failed %w", err)
 	}
 
 	return user, nil

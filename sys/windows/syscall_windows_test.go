@@ -1,12 +1,12 @@
 package windows
 
 import (
+	"errors"
 	"os"
 	"runtime"
 	"syscall"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -130,7 +130,7 @@ func TestCreateToolhelp32Snapshot(t *testing.T) {
 	pid := uint32(syscall.Getpid())
 	for {
 		process, err := Process32Next(handle)
-		if errors.Cause(err) == syscall.ERROR_NO_MORE_FILES {
+		if errors.Is(err, syscall.ERROR_NO_MORE_FILES) {
 			break
 		}
 		if err != nil {

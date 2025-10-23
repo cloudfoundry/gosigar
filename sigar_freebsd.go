@@ -185,7 +185,7 @@ func (self *LoadAverage) Get() error {
 	return nil
 }
 
-func (self *ProcList) Get() error {
+func (pl *ProcList) Get() error {
 	dir, err := os.Open(Procd)
 	if err != nil {
 		return err
@@ -212,37 +212,37 @@ func (self *ProcList) Get() error {
 		}
 	}
 
-	self.List = list
+	pl.List = list
 
 	return nil
 }
 
-func (self *ProcState) Get(pid int) error {
+func (ps *ProcState) Get(pid int) error {
 	pinfo, err := getProcInfo(pid)
 	if err != nil {
 		return err
 	}
-	self.Name = string(bytes.Trim(pinfo.Comm[:], "\x00"))
-	self.Ppid = int(pinfo.Ppid)
+	ps.Name = string(bytes.Trim(pinfo.Comm[:], "\x00"))
+	ps.Ppid = int(pinfo.Ppid)
 	switch pinfo.Stat {
 	case procStateRun:
-		self.State = RunStateRun
+		ps.State = RunStateRun
 	case procStateIdle:
-		self.State = RunStateIdle
+		ps.State = RunStateIdle
 	case procStateSleep:
-		self.State = RunStateSleep
+		ps.State = RunStateSleep
 	case procStateStop:
-		self.State = RunStateStop
+		ps.State = RunStateStop
 	case procStateZombie:
-		self.State = RunStateZombie
+		ps.State = RunStateZombie
 	default:
-		self.State = RunStateUnknown
+		ps.State = RunStateUnknown
 	}
 
 	return nil
 }
 
-func (self *FileSystemList) Get() error {
+func (fsl *FileSystemList) Get() error {
 	n, err := unix.Getfsstat(nil, unix.MNT_NOWAIT)
 	if err != nil {
 		return err
@@ -257,11 +257,11 @@ func (self *FileSystemList) Get() error {
 		fs.SysTypeName = string(bytes.Trim(f.Fstypename[:], "\x00"))
 		fslist = append(fslist, fs)
 	}
-	self.List = fslist
+	fsl.List = fslist
 	return nil
 }
 
-func (self *FileSystemUsage) Get(path string) error {
+func (fs *FileSystemUsage) Get(path string) error {
 	stat := unix.Statfs_t{}
 	err := unix.Statfs(path, &stat)
 	if err != nil {
@@ -270,22 +270,22 @@ func (self *FileSystemUsage) Get(path string) error {
 
 	bsize := stat.Bsize / 512
 
-	self.Total = (uint64(stat.Blocks) * uint64(bsize)) >> 1
-	self.Free = (uint64(stat.Bfree) * uint64(bsize)) >> 1
-	self.Avail = (uint64(stat.Bavail) * uint64(bsize)) >> 1
-	self.Used = self.Total - self.Free
-	self.Files = stat.Files
-	self.FreeFiles = uint64(stat.Ffree)
+	fs.Total = (uint64(stat.Blocks) * uint64(bsize)) >> 1
+	fs.Free = (uint64(stat.Bfree) * uint64(bsize)) >> 1
+	fs.Avail = (uint64(stat.Bavail) * uint64(bsize)) >> 1
+	fs.Used = fs.Total - fs.Free
+	fs.Files = stat.Files
+	fs.FreeFiles = uint64(stat.Ffree)
 
 	return nil
 }
 
-func (self *ProcTime) Get(pid int) error {
+func (pt *ProcTime) Get(pid int) error {
 	rusage := unix.Rusage{}
 	unix.Getrusage(pid, &rusage)
-	self.User = uint64(rusage.Utime.Nano() / 1e6)
-	self.Sys = uint64(rusage.Stime.Nano() / 1e6)
-	self.Total = self.User + self.Sys
+	pt.User = uint64(rusage.Utime.Nano() / 1e6)
+	pt.Sys = uint64(rusage.Stime.Nano() / 1e6)
+	pt.Total = pt.User + pt.Sys
 
 	var tv unix.Timeval
 	pinfo, err := getProcInfo(pid)
@@ -293,7 +293,7 @@ func (self *ProcTime) Get(pid int) error {
 		return err
 	}
 	tv = *(*unix.Timeval)(unsafe.Pointer(&pinfo.Start[0]))
-	self.StartTime = (uint64(tv.Sec) * 1000) + (uint64(tv.Usec) / 1000)
+	pt.StartTime = (uint64(tv.Sec) * 1000) + (uint64(tv.Usec) / 1000)
 
 	return nil
 }
@@ -360,7 +360,7 @@ type cpuStat struct {
 	idle int64
 }
 
-func (self *CpuList) Get() error {
+func (cl *CpuList) Get() error {
 	cpTimes, err := unix.SysctlRaw("kern.cp_times")
 	if err != nil {
 		return err
@@ -383,12 +383,12 @@ func (self *CpuList) Get() error {
 
 		cpulist = append(cpulist, cpu)
 	}
-	self.List = cpulist
+	cl.List = cpulist
 
 	return nil
 }
 
-func (self *ProcMem) Get(pid int) error {
+func (pm *ProcMem) Get(pid int) error {
 	pageSize, err := unix.SysctlUint32("hw.pagesize")
 	if err != nil {
 		return err
@@ -397,17 +397,17 @@ func (self *ProcMem) Get(pid int) error {
 	rusage := unix.Rusage{}
 	unix.Getrusage(pid, &rusage)
 
-	self.Resident = (uint64(rusage.Ixrss) + uint64(rusage.Idrss)) * uint64(pageSize)
-	self.Share = uint64(rusage.Isrss) * uint64(pageSize)
-	self.Size = self.Resident + self.Share
-	self.MinorFaults = uint64(rusage.Minflt)
-	self.MajorFaults = uint64(rusage.Majflt)
-	self.PageFaults = self.MinorFaults + self.MajorFaults
+	pm.Resident = (uint64(rusage.Ixrss) + uint64(rusage.Idrss)) * uint64(pageSize)
+	pm.Share = uint64(rusage.Isrss) * uint64(pageSize)
+	pm.Size = pm.Resident + pm.Share
+	pm.MinorFaults = uint64(rusage.Minflt)
+	pm.MajorFaults = uint64(rusage.Majflt)
+	pm.PageFaults = pm.MinorFaults + pm.MajorFaults
 
 	return nil
 }
 
-func (self *ProcArgs) Get(pid int) error {
+func (pa *ProcArgs) Get(pid int) error {
 	contents, err := readProcFile(pid, "cmdline")
 	if err != nil {
 		return err
@@ -425,14 +425,14 @@ func (self *ProcArgs) Get(pid int) error {
 		args = append(args, string(chop(arg)))
 	}
 
-	self.List = args
+	pa.List = args
 
 	return nil
 }
 
-func (self *ProcExe) Get(pid int) error {
+func (pe *ProcExe) Get(pid int) error {
 	var err error
-	self.Name, err = os.Readlink(procFileName(pid, "file"))
+	pe.Name, err = os.Readlink(procFileName(pid, "file"))
 	if err != nil {
 		return err
 	}
