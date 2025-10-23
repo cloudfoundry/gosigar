@@ -159,7 +159,7 @@ func (m *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
 	//
 	// (*) There does not seem to be a truly reliable and portable
 	//     means of detecting execution inside a container vs
-	//     outside. Between all the platforms (macos, linux,
+	//     outside. Between all the platforms (macOS, linux,
 	//     windows), and container runtimes (docker, lxc, oci, ...).
 	//
 	// (**) The exact value actually is 2^63 - 4096, i.e

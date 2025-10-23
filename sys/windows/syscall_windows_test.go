@@ -102,7 +102,7 @@ func TestGetDiskFreeSpaceEx(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Ignore CDROM drives. They return an error if the drive is emtpy.
+		// Ignore CD-ROM drives. They return an error if the drive is empty.
 		if dt != DRIVE_CDROM {
 			free, total, totalFree, err := GetDiskFreeSpaceEx(drive)
 			if err != nil {

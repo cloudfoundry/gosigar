@@ -394,7 +394,7 @@ func sysctl(mib []C.int, old *byte, oldlen *uintptr,
 	_, _, e1 := syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(p0),
 		uintptr(len(mib)),
 		uintptr(unsafe.Pointer(old)), uintptr(unsafe.Pointer(oldlen)),
-		uintptr(unsafe.Pointer(new)), uintptr(newlen))
+		uintptr(unsafe.Pointer(new)), newlen)
 	if e1 != 0 {
 		err = e1
 	}

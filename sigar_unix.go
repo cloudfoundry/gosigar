@@ -15,9 +15,9 @@ func (fs *FileSystemUsage) Get(path string) error { //nolint:staticcheck
 
 	bsize := stat.Bsize / 512
 
-	fs.Total = (uint64(stat.Blocks) * uint64(bsize)) >> 1
-	fs.Free = (uint64(stat.Bfree) * uint64(bsize)) >> 1
-	fs.Avail = (uint64(stat.Bavail) * uint64(bsize)) >> 1
+	fs.Total = (stat.Blocks * uint64(bsize)) >> 1
+	fs.Free = (stat.Bfree * uint64(bsize)) >> 1
+	fs.Avail = (stat.Bavail * uint64(bsize)) >> 1
 	fs.Used = fs.Total - fs.Free
 	fs.Files = stat.Files
 	fs.FreeFiles = stat.Ffree

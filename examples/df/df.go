@@ -17,12 +17,12 @@ func main() {
 	var fileSystemFilter string
 	flag.StringVar(&fileSystemFilter, "t", "", "Filesystem to filter on")
 	flag.Parse()
-	fslist := sigar.FileSystemList{}
-	fslist.Get() //nolint:errcheck
+	fsList := sigar.FileSystemList{}
+	fsList.Get() //nolint:errcheck
 
 	fmt.Printf(outputFormat, "Filesystem", "Size", "Used", "Avail", "Use%", "Mounted on")
 
-	for _, fs := range fslist.List {
+	for _, fs := range fsList.List {
 		dirName := fs.DirName
 		usage := sigar.FileSystemUsage{}
 		usage.Get(dirName) //nolint:errcheck
