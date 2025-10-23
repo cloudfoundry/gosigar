@@ -57,9 +57,9 @@ func FormatPercent(percent float64) string {
 	return strconv.FormatFloat(percent, 'f', -1, 64) + "%"
 }
 
-func (self *FileSystemUsage) UsePercent() float64 { //nolint:staticcheck
-	b_used := (self.Total - self.Free) / 1024
-	b_avail := self.Avail / 1024
+func (fs *FileSystemUsage) UsePercent() float64 { //nolint:staticcheck
+	b_used := (fs.Total - fs.Free) / 1024
+	b_avail := fs.Avail / 1024
 	utotal := b_used + b_avail
 	used := b_used
 
@@ -101,11 +101,11 @@ func (self *Uptime) Format() string { //nolint:staticcheck
 	return buf.String()
 }
 
-func (self *ProcTime) FormatStartTime() string { //nolint:staticcheck
-	if self.StartTime == 0 {
+func (pt *ProcTime) FormatStartTime() string { //nolint:staticcheck
+	if pt.StartTime == 0 {
 		return "00:00"
 	}
-	start := time.Unix(int64(self.StartTime)/1000, 0)
+	start := time.Unix(int64(pt.StartTime)/1000, 0)
 	format := "Jan02"
 	if time.Since(start).Seconds() < (60 * 60 * 24) {
 		format = "15:04"
@@ -113,8 +113,8 @@ func (self *ProcTime) FormatStartTime() string { //nolint:staticcheck
 	return start.Format(format)
 }
 
-func (self *ProcTime) FormatTotal() string { //nolint:staticcheck
-	t := self.Total / 1000
+func (pt *ProcTime) FormatTotal() string { //nolint:staticcheck
+	t := pt.Total / 1000
 	ss := t % 60
 	t /= 60
 	mm := t % 60

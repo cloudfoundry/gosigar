@@ -232,8 +232,8 @@ func (self *Cpu) Get() error { //nolint:staticcheck
 	})
 }
 
-func (self *CpuList) Get() error { //nolint:staticcheck
-	capacity := len(self.List)
+func (cl *CpuList) Get() error { //nolint:staticcheck
+	capacity := len(cl.List)
 	if capacity == 0 {
 		capacity = 4
 	}
@@ -248,17 +248,17 @@ func (self *CpuList) Get() error { //nolint:staticcheck
 		return true
 	})
 
-	self.List = list
+	cl.List = list
 
 	return err
 }
 
-func (self *FileSystemList) Get() error { //nolint:staticcheck
+func (fsl *FileSystemList) Get() error { //nolint:staticcheck
 	src := Etcd + "/mtab"
 	if _, err := os.Stat(src); err != nil {
 		src = Procd + "/mounts"
 	}
-	capacity := len(self.List)
+	capacity := len(fsl.List)
 	if capacity == 0 {
 		capacity = 10
 	}
@@ -278,12 +278,12 @@ func (self *FileSystemList) Get() error { //nolint:staticcheck
 		return true
 	})
 
-	self.List = fslist
+	fsl.List = fslist
 
 	return err
 }
 
-func (self *ProcList) Get() error { //nolint:staticcheck
+func (pl *ProcList) Get() error { //nolint:staticcheck
 	dir, err := os.Open(Procd)
 	if err != nil {
 		return err
@@ -310,12 +310,12 @@ func (self *ProcList) Get() error { //nolint:staticcheck
 		}
 	}
 
-	self.List = list
+	pl.List = list
 
 	return nil
 }
 
-func (self *ProcState) Get(pid int) error { //nolint:staticcheck
+func (ps *ProcState) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "stat")
 	if err != nil {
 		return err
@@ -323,24 +323,24 @@ func (self *ProcState) Get(pid int) error { //nolint:staticcheck
 
 	fields := strings.Fields(string(contents))
 
-	self.Name = fields[1][1 : len(fields[1])-1] // strip ()'s
+	ps.Name = fields[1][1 : len(fields[1])-1] // strip ()'s
 
-	self.State = RunState(fields[2][0])
+	ps.State = RunState(fields[2][0])
 
-	self.Ppid, _ = strconv.Atoi(fields[3]) //nolint:errcheck
+	ps.Ppid, _ = strconv.Atoi(fields[3]) //nolint:errcheck
 
-	self.Tty, _ = strconv.Atoi(fields[6]) //nolint:errcheck
+	ps.Tty, _ = strconv.Atoi(fields[6]) //nolint:errcheck
 
-	self.Priority, _ = strconv.Atoi(fields[17]) //nolint:errcheck
+	ps.Priority, _ = strconv.Atoi(fields[17]) //nolint:errcheck
 
-	self.Nice, _ = strconv.Atoi(fields[18]) //nolint:errcheck
+	ps.Nice, _ = strconv.Atoi(fields[18]) //nolint:errcheck
 
-	self.Processor, _ = strconv.Atoi(fields[38]) //nolint:errcheck
+	ps.Processor, _ = strconv.Atoi(fields[38]) //nolint:errcheck
 
 	return nil
 }
 
-func (self *ProcMem) Get(pid int) error { //nolint:staticcheck
+func (pm *ProcMem) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "statm")
 	if err != nil {
 		return err
@@ -349,13 +349,13 @@ func (self *ProcMem) Get(pid int) error { //nolint:staticcheck
 	fields := strings.Fields(string(contents))
 
 	size, _ := strtoull(fields[0]) //nolint:errcheck
-	self.Size = size << 12
+	pm.Size = size << 12
 
 	rss, _ := strtoull(fields[1]) //nolint:errcheck
-	self.Resident = rss << 12
+	pm.Resident = rss << 12
 
 	share, _ := strtoull(fields[2]) //nolint:errcheck
-	self.Share = share << 12
+	pm.Share = share << 12
 
 	contents, err = readProcFile(pid, "stat")
 	if err != nil {
@@ -364,14 +364,14 @@ func (self *ProcMem) Get(pid int) error { //nolint:staticcheck
 
 	fields = strings.Fields(string(contents))
 
-	self.MinorFaults, _ = strtoull(fields[10]) //nolint:errcheck
-	self.MajorFaults, _ = strtoull(fields[12]) //nolint:errcheck
-	self.PageFaults = self.MinorFaults + self.MajorFaults
+	pm.MinorFaults, _ = strtoull(fields[10]) //nolint:errcheck
+	pm.MajorFaults, _ = strtoull(fields[12]) //nolint:errcheck
+	pm.PageFaults = pm.MinorFaults + pm.MajorFaults
 
 	return nil
 }
 
-func (self *ProcTime) Get(pid int) error { //nolint:staticcheck
+func (pt *ProcTime) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "stat")
 	if err != nil {
 		return err
@@ -382,20 +382,20 @@ func (self *ProcTime) Get(pid int) error { //nolint:staticcheck
 	user, _ := strtoull(fields[13]) //nolint:errcheck
 	sys, _ := strtoull(fields[14])  //nolint:errcheck
 	// convert to millis
-	self.User = user * (1000 / system.ticks)
-	self.Sys = sys * (1000 / system.ticks)
-	self.Total = self.User + self.Sys
+	pt.User = user * (1000 / system.ticks)
+	pt.Sys = sys * (1000 / system.ticks)
+	pt.Total = pt.User + pt.Sys
 
 	// convert to millis
-	self.StartTime, _ = strtoull(fields[21]) //nolint:errcheck
-	self.StartTime /= system.ticks
-	self.StartTime += system.btime
-	self.StartTime *= 1000
+	pt.StartTime, _ = strtoull(fields[21]) //nolint:errcheck
+	pt.StartTime /= system.ticks
+	pt.StartTime += system.btime
+	pt.StartTime *= 1000
 
 	return nil
 }
 
-func (self *ProcArgs) Get(pid int) error { //nolint:staticcheck
+func (pa *ProcArgs) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "cmdline")
 	if err != nil {
 		return err
@@ -413,16 +413,16 @@ func (self *ProcArgs) Get(pid int) error { //nolint:staticcheck
 		args = append(args, string(chop(arg)))
 	}
 
-	self.List = args
+	pa.List = args
 
 	return nil
 }
 
-func (self *ProcExe) Get(pid int) error { //nolint:staticcheck
+func (pe *ProcExe) Get(pid int) error { //nolint:staticcheck
 	fields := map[string]*string{
-		"exe":  &self.Name,
-		"cwd":  &self.Cwd,
-		"root": &self.Root,
+		"exe":  &pe.Name,
+		"cwd":  &pe.Cwd,
+		"root": &pe.Root,
 	}
 
 	for name, field := range fields {
