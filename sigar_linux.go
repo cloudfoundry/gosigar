@@ -77,7 +77,7 @@ func init() {
 	})
 }
 
-func (self *LoadAverage) Get() error { //nolint:staticcheck
+func (la *LoadAverage) Get() error { //nolint:staticcheck
 	line, err := os.ReadFile(Procd + "/loadavg")
 	if err != nil {
 		return nil
@@ -85,39 +85,39 @@ func (self *LoadAverage) Get() error { //nolint:staticcheck
 
 	fields := strings.Fields(string(line))
 
-	self.One, _ = strconv.ParseFloat(fields[0], 64)     //nolint:errcheck
-	self.Five, _ = strconv.ParseFloat(fields[1], 64)    //nolint:errcheck
-	self.Fifteen, _ = strconv.ParseFloat(fields[2], 64) //nolint:errcheck
+	la.One, _ = strconv.ParseFloat(fields[0], 64)     //nolint:errcheck
+	la.Five, _ = strconv.ParseFloat(fields[1], 64)    //nolint:errcheck
+	la.Fifteen, _ = strconv.ParseFloat(fields[2], 64) //nolint:errcheck
 
 	return nil
 }
 
-func (self *Uptime) Get() error { //nolint:staticcheck
+func (u *Uptime) Get() error { //nolint:staticcheck
 	sysinfo := syscall.Sysinfo_t{}
 
 	if err := syscall.Sysinfo(&sysinfo); err != nil {
 		return err
 	}
 
-	self.Length = float64(sysinfo.Uptime)
+	u.Length = float64(sysinfo.Uptime)
 
 	return nil
 }
 
-func (self *Mem) Get() error { //nolint:staticcheck
-	return self.get(false)
+func (m *Mem) Get() error { //nolint:staticcheck
+	return m.get(false)
 }
 
-func (self *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
-	return self.get(true)
+func (m *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
+	return m.get(true)
 }
 
-func (self *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
+func (m *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
 	var available = MaxUint64
 	var buffers, cached uint64
 	table := map[string]*uint64{
-		"MemTotal":     &self.Total,
-		"MemFree":      &self.Free,
+		"MemTotal":     &m.Total,
+		"MemFree":      &m.Free,
 		"MemAvailable": &available,
 		"Buffers":      &buffers,
 		"Cached":       &cached,
@@ -128,13 +128,13 @@ func (self *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
 	}
 
 	if available == MaxUint64 {
-		self.ActualFree = self.Free + buffers + cached
+		m.ActualFree = m.Free + buffers + cached
 	} else {
-		self.ActualFree = available
+		m.ActualFree = available
 	}
 
-	self.Used = self.Total - self.Free
-	self.ActualUsed = self.Total - self.ActualFree
+	m.Used = m.Total - m.Free
+	m.ActualUsed = m.Total - m.ActualFree
 
 	if ignoreCGroups {
 		return nil
@@ -175,11 +175,11 @@ func (self *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
 	cgroupLimit, err := determineMemoryLimit(cgroup)
 	// (x) If the limit is not available or bogus we keep the host data as limit.
 
-	if err == nil && cgroupLimit < self.Total {
+	if err == nil && cgroupLimit < m.Total {
 		// See (2) above why only a cgroup limit less than the
 		// host total is accepted as the new total available
 		// memory in the cgroup.
-		self.Total = cgroupLimit
+		m.Total = cgroupLimit
 	}
 
 	rss, err := determineMemoryUsage(cgroup)
@@ -198,37 +198,36 @@ func (self *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
 		swap = 0
 	}
 
-	self.Used = rss + swap
-	self.Free = self.Total - self.Used
+	m.Used = rss + swap
+	m.Free = m.Total - m.Used
 
-	self.ActualUsed = self.Used
-	self.ActualFree = self.Free
+	m.ActualUsed = m.Used
+	m.ActualFree = m.Free
 
 	return nil
 }
 
-func (self *Swap) Get() error { //nolint:staticcheck
+func (s *Swap) Get() error { //nolint:staticcheck
 	table := map[string]*uint64{
-		"SwapTotal": &self.Total,
-		"SwapFree":  &self.Free,
+		"SwapTotal": &s.Total,
+		"SwapFree":  &s.Free,
 	}
 
 	if err := parseMeminfo(table); err != nil {
 		return err
 	}
 
-	self.Used = self.Total - self.Free
+	s.Used = s.Total - s.Free
 	return nil
 }
 
-func (self *Cpu) Get() error { //nolint:staticcheck
+func (c *Cpu) Get() error { //nolint:staticcheck
 	return readFile(Procd+"/stat", func(line string) bool {
 		if len(line) > 4 && line[0:4] == "cpu " {
-			parseCpuStat(self, line) //nolint:errcheck
+			parseCpuStat(c, line) //nolint:errcheck
 			return false
 		}
 		return true
-
 	})
 }
 

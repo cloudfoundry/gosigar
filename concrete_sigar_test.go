@@ -1,6 +1,7 @@
 package sigar_test
 
 import (
+	"errors"
 	"runtime"
 	"time"
 
@@ -53,7 +54,7 @@ var _ = Describe("ConcreteSigar", func() {
 
 	It("GetLoadAverage", func() {
 		avg, err := concreteSigar.GetLoadAverage()
-		if err == sigar.ErrNotImplemented {
+		if errors.Is(err, sigar.ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(avg.One).ToNot(BeNil())

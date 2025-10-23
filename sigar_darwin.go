@@ -27,34 +27,34 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func (self *LoadAverage) Get() error { //nolint:staticcheck
+func (la *LoadAverage) Get() error { //nolint:staticcheck
 	avg := []C.double{0, 0, 0}
 
 	C.getloadavg(&avg[0], C.int(len(avg)))
 
-	self.One = float64(avg[0])
-	self.Five = float64(avg[1])
-	self.Fifteen = float64(avg[2])
+	la.One = float64(avg[0])
+	la.Five = float64(avg[1])
+	la.Fifteen = float64(avg[2])
 
 	return nil
 }
 
-func (self *Uptime) Get() error { //nolint:staticcheck
+func (u *Uptime) Get() error { //nolint:staticcheck
 	tv := syscall.Timeval32{}
 
 	if err := sysctlbyname("kern.boottime", &tv); err != nil {
 		return err
 	}
 
-	self.Length = time.Since(time.Unix(int64(tv.Sec), int64(tv.Usec)*1000)).Seconds()
+	u.Length = time.Since(time.Unix(int64(tv.Sec), int64(tv.Usec)*1000)).Seconds()
 
 	return nil
 }
 
-func (self *Mem) Get() error { //nolint:staticcheck
+func (m *Mem) Get() error { //nolint:staticcheck
 	var vmstat C.vm_statistics_data_t
 
-	if err := sysctlbyname("hw.memsize", &self.Total); err != nil {
+	if err := sysctlbyname("hw.memsize", &m.Total); err != nil {
 		return err
 	}
 
@@ -63,38 +63,38 @@ func (self *Mem) Get() error { //nolint:staticcheck
 	}
 
 	kern := uint64(vmstat.inactive_count) << 12
-	self.Free = uint64(vmstat.free_count) << 12
+	m.Free = uint64(vmstat.free_count) << 12
 
-	self.Used = self.Total - self.Free
-	self.ActualFree = self.Free + kern
-	self.ActualUsed = self.Used - kern
+	m.Used = m.Total - m.Free
+	m.ActualFree = m.Free + kern
+	m.ActualUsed = m.Used - kern
 
 	return nil
 }
 
-func (self *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
-	return self.Get()
+func (m *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
+	return m.Get()
 }
 
 type xsw_usage struct {
 	Total, Avail, Used uint64
 }
 
-func (self *Swap) Get() error { //nolint:staticcheck
+func (s *Swap) Get() error { //nolint:staticcheck
 	sw_usage := xsw_usage{}
 
 	if err := sysctlbyname("vm.swapusage", &sw_usage); err != nil {
 		return err
 	}
 
-	self.Total = sw_usage.Total
-	self.Used = sw_usage.Used
-	self.Free = sw_usage.Avail
+	s.Total = sw_usage.Total
+	s.Used = sw_usage.Used
+	s.Free = sw_usage.Avail
 
 	return nil
 }
 
-func (self *Cpu) Get() error { //nolint:staticcheck
+func (c *Cpu) Get() error { //nolint:staticcheck
 	var count C.mach_msg_type_number_t = C.HOST_CPU_LOAD_INFO_COUNT
 	var cpuload C.host_cpu_load_info_data_t
 
@@ -107,10 +107,10 @@ func (self *Cpu) Get() error { //nolint:staticcheck
 		return fmt.Errorf("host_statistics error=%d", status)
 	}
 
-	self.User = uint64(cpuload.cpu_ticks[C.CPU_STATE_USER])
-	self.Sys = uint64(cpuload.cpu_ticks[C.CPU_STATE_SYSTEM])
-	self.Idle = uint64(cpuload.cpu_ticks[C.CPU_STATE_IDLE])
-	self.Nice = uint64(cpuload.cpu_ticks[C.CPU_STATE_NICE])
+	c.User = uint64(cpuload.cpu_ticks[C.CPU_STATE_USER])
+	c.Sys = uint64(cpuload.cpu_ticks[C.CPU_STATE_SYSTEM])
+	c.Idle = uint64(cpuload.cpu_ticks[C.CPU_STATE_IDLE])
+	c.Nice = uint64(cpuload.cpu_ticks[C.CPU_STATE_NICE])
 
 	return nil
 }

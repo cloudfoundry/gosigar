@@ -4,29 +4,29 @@ import (
 	"time"
 )
 
-func (self *ProcCpu) Get(pid int) error { //nolint:staticcheck
-	if self.cache == nil {
-		self.cache = make(map[int]ProcCpu)
+func (pc *ProcCpu) Get(pid int) error { //nolint:staticcheck
+	if pc.cache == nil {
+		pc.cache = make(map[int]ProcCpu)
 	}
-	prevProcCpu := self.cache[pid]
+	prevProcCpu := pc.cache[pid]
 
 	procTime := &ProcTime{}
 	if err := procTime.Get(pid); err != nil {
 		return err
 	}
-	self.StartTime = procTime.StartTime
-	self.User = procTime.User
-	self.Sys = procTime.Sys
-	self.Total = procTime.Total
+	pc.StartTime = procTime.StartTime
+	pc.User = procTime.User
+	pc.Sys = procTime.Sys
+	pc.Total = procTime.Total
 
-	self.LastTime = uint64(time.Now().UnixNano() / int64(time.Millisecond))
-	self.cache[pid] = *self
+	pc.LastTime = uint64(time.Now().UnixNano() / int64(time.Millisecond))
+	pc.cache[pid] = *pc
 
 	if prevProcCpu.LastTime == 0 {
 		time.Sleep(100 * time.Millisecond)
-		return self.Get(pid)
+		return pc.Get(pid)
 	}
 
-	self.Percent = float64(self.Total-prevProcCpu.Total) / float64(self.LastTime-prevProcCpu.LastTime)
+	pc.Percent = float64(pc.Total-prevProcCpu.Total) / float64(pc.LastTime-prevProcCpu.LastTime)
 	return nil
 }
