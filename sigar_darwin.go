@@ -104,7 +104,7 @@ func (c *Cpu) Get() error { //nolint:staticcheck
 		&count)
 
 	if status != C.KERN_SUCCESS {
-		return fmt.Errorf("host_statistics error=%d", status)
+		return fmt.Errorf("host_statistics error=%d", int64(status))
 	}
 
 	c.User = uint64(cpuload.cpu_ticks[C.CPU_STATE_USER])
@@ -127,7 +127,7 @@ func (cl *CpuList) Get() error { //nolint:staticcheck
 		&count)
 
 	if status != C.KERN_SUCCESS {
-		return fmt.Errorf("host_processor_info error=%d", status)
+		return fmt.Errorf("host_processor_info error=%d", int64(status))
 	}
 
 	// jump through some cgo casting hoops and ensure we properly free
@@ -411,7 +411,7 @@ func vm_info(vmstat *C.vm_statistics_data_t) error {
 		&count)
 
 	if status != C.KERN_SUCCESS {
-		return fmt.Errorf("host_statistics=%d", status)
+		return fmt.Errorf("host_statistics=%d", int64(status))
 	}
 
 	return nil
