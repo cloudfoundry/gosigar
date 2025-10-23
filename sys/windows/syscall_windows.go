@@ -1,12 +1,11 @@
 package windows
 
 import (
+	"errors"
 	"fmt"
 	"syscall"
 	"time"
 	"unsafe"
-
-	"github.com/pkg/errors"
 )
 
 var (
@@ -139,7 +138,7 @@ func GetLogicalDriveStrings() ([]string, error) {
 	// Determine the size of the buffer required to receive all drives.
 	bufferLength, err := _GetLogicalDriveStringsW(0, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetLogicalDriveStringsW failed to get buffer length")
+		return nil, fmt.Errorf("GetLogicalDriveStringsW failed to get buffer length %w", err)
 	}
 	if bufferLength < 0 { //nolint:staticcheck
 		return nil, errors.New("GetLogicalDriveStringsW returned an invalid buffer length")
@@ -148,7 +147,7 @@ func GetLogicalDriveStrings() ([]string, error) {
 	buffer := make([]uint16, bufferLength)
 	_, err = _GetLogicalDriveStringsW(uint32(len(buffer)), &buffer[0])
 	if err != nil {
-		return nil, errors.Wrap(err, "GetLogicalDriveStringsW failed")
+		return nil, fmt.Errorf("GetLogicalDriveStringsW failed %w", err)
 	}
 
 	// Split the uint16 slice at null-terminators.
@@ -179,7 +178,7 @@ func GlobalMemoryStatusEx() (MemoryStatusEx, error) {
 	memoryStatusEx := MemoryStatusEx{length: sizeofMemoryStatusEx}
 	err := _GlobalMemoryStatusEx(&memoryStatusEx)
 	if err != nil {
-		return MemoryStatusEx{}, errors.Wrap(err, "GlobalMemoryStatusEx failed")
+		return MemoryStatusEx{}, fmt.Errorf("GlobalMemoryStatusEx failed %w", err)
 	}
 
 	return memoryStatusEx, nil
@@ -192,7 +191,7 @@ func GetProcessMemoryInfo(handle syscall.Handle) (ProcessMemoryCountersEx, error
 	processMemoryCountersEx := ProcessMemoryCountersEx{cb: sizeofProcessMemoryCountersEx}
 	err := _GetProcessMemoryInfo(handle, &processMemoryCountersEx, processMemoryCountersEx.cb)
 	if err != nil {
-		return ProcessMemoryCountersEx{}, errors.Wrap(err, "GetProcessMemoryInfo failed")
+		return ProcessMemoryCountersEx{}, fmt.Errorf("GetProcessMemoryInfo failed %w", err)
 	}
 
 	return processMemoryCountersEx, nil
@@ -205,7 +204,7 @@ func GetProcessImageFileName(handle syscall.Handle) (string, error) {
 	buffer := make([]uint16, MAX_PATH)
 	_, err := _GetProcessImageFileName(handle, &buffer[0], uint32(len(buffer)))
 	if err != nil {
-		return "", errors.Wrap(err, "GetProcessImageFileName failed")
+		return "", fmt.Errorf("GetProcessImageFileName failed %w", err)
 	}
 
 	return syscall.UTF16ToString(buffer), nil
@@ -219,7 +218,7 @@ func GetSystemTimes() (idle, kernel, user time.Duration, err error) {
 	var idleTime, kernelTime, userTime syscall.Filetime
 	err = _GetSystemTimes(&idleTime, &kernelTime, &userTime)
 	if err != nil {
-		return 0, 0, 0, errors.Wrap(err, "GetSystemTimes failed")
+		return 0, 0, 0, fmt.Errorf("GetSystemTimes failed %w", err)
 	}
 
 	idle = FiletimeToDuration(&idleTime)
@@ -244,12 +243,12 @@ func FiletimeToDuration(ft *syscall.Filetime) time.Duration {
 func GetDriveType(rootPathName string) (DriveType, error) {
 	rootPathNamePtr, err := syscall.UTF16PtrFromString(rootPathName)
 	if err != nil {
-		return DRIVE_UNKNOWN, errors.Wrapf(err, "UTF16PtrFromString failed for rootPathName=%v", rootPathName)
+		return DRIVE_UNKNOWN, fmt.Errorf("UTF16PtrFromString failed for rootPathName=%v %w", rootPathName, err)
 	}
 
 	dt, err := _GetDriveType(rootPathNamePtr)
 	if err != nil {
-		return DRIVE_UNKNOWN, errors.Wrapf(err, "GetDriveType failed for rootPathName=%v", rootPathName)
+		return DRIVE_UNKNOWN, fmt.Errorf("GetDriveType failed for rootPathName=%v %w", rootPathName, err)
 	}
 
 	return dt, nil
@@ -271,7 +270,7 @@ func EnumProcesses() ([]uint32, error) {
 
 		pidsWritten := int(bytesWritten) / sizeofUint32
 		if int(bytesWritten)%sizeofUint32 != 0 || pidsWritten > len(pids) {
-			return nil, errors.Errorf("EnumProcesses returned an invalid bytesWritten value of %v", bytesWritten)
+			return nil, fmt.Errorf("EnumProcesses returned an invalid bytesWritten value of %v", bytesWritten)
 		}
 		pids = pids[:pidsWritten]
 
@@ -285,7 +284,7 @@ func EnumProcesses() ([]uint32, error) {
 		var err error
 		pids, err = enumProcesses(size)
 		if err != nil {
-			return nil, errors.Wrap(err, "EnumProcesses failed")
+			return nil, fmt.Errorf("EnumProcesses failed %w", err)
 		}
 
 		if len(pids) < size {
@@ -293,7 +292,7 @@ func EnumProcesses() ([]uint32, error) {
 		}
 
 		// Increase the size the pids array and retry the enumProcesses call
-		// because the array wasn't large enough to hold all of the processes.
+		// because the array wasn't large enough to hold all the processes.
 		size *= 2
 	}
 
@@ -308,7 +307,7 @@ func EnumProcesses() ([]uint32, error) {
 func GetDiskFreeSpaceEx(directoryName string) (freeBytesAvailable, totalNumberOfBytes, totalNumberOfFreeBytes uint64, err error) {
 	directoryNamePtr, err := syscall.UTF16PtrFromString(directoryName)
 	if err != nil {
-		return 0, 0, 0, errors.Wrapf(err, "UTF16PtrFromString failed for directoryName=%v", directoryName)
+		return 0, 0, 0, fmt.Errorf("UTF16PtrFromString failed for directoryName=%v %w", directoryName, err)
 	}
 
 	err = _GetDiskFreeSpaceEx(directoryNamePtr, &freeBytesAvailable, &totalNumberOfBytes, &totalNumberOfFreeBytes)
@@ -341,7 +340,7 @@ func Process32First(handle syscall.Handle) (ProcessEntry32, error) {
 	processEntry32 := ProcessEntry32{size: sizeofProcessEntry32}
 	err := _Process32First(handle, &processEntry32)
 	if err != nil {
-		return ProcessEntry32{}, errors.Wrap(err, "Process32First failed")
+		return ProcessEntry32{}, fmt.Errorf("Process32First failed %w", err)
 	}
 
 	return processEntry32, nil
@@ -355,10 +354,103 @@ func Process32Next(handle syscall.Handle) (ProcessEntry32, error) {
 	processEntry32 := ProcessEntry32{size: sizeofProcessEntry32}
 	err := _Process32Next(handle, &processEntry32)
 	if err != nil {
-		return ProcessEntry32{}, errors.Wrap(err, "Process32Next failed")
+		return ProcessEntry32{}, fmt.Errorf("Process32Next failed %w", err)
 	}
 
 	return processEntry32, nil
+}
+
+type UnicodeString struct {
+	Length        uint16
+	MaximumLength uint16
+	Buffer        uintptr
+}
+
+type RtlUserProcessParameters struct {
+	Reserved1     [16]byte
+	Reserved2     [10]uintptr
+	ImagePathName UnicodeString
+	CommandLine   UnicodeString
+}
+
+func GetUserProcessParams(handle syscall.Handle, pbi ProcessBasicInformation) (*RtlUserProcessParameters, error) {
+	const pebUserProcessParametersOffset = 0x20
+	userProcParamsAddr := pbi.PebBaseAddress + pebUserProcessParametersOffset
+
+	var userProcParamsPtr uintptr
+	err := ReadProcessMemory(handle, userProcParamsAddr, (*byte)(unsafe.Pointer(&userProcParamsPtr)), unsafe.Sizeof(userProcParamsPtr))
+	if err != nil {
+		return nil, fmt.Errorf("ReadProcessMemory failed for user process parameters pointer %w", err)
+	}
+
+	userProcParams := &RtlUserProcessParameters{}
+	err = ReadProcessMemory(handle, userProcParamsPtr, (*byte)(unsafe.Pointer(userProcParams)), unsafe.Sizeof(*userProcParams))
+	if err != nil {
+		return nil, fmt.Errorf("ReadProcessMemory failed for user process parameters %w", err)
+	}
+
+	return userProcParams, nil
+}
+
+func ReadProcessUnicodeString(handle syscall.Handle, s *UnicodeString) ([]byte, error) {
+	if s.Length == 0 || s.Buffer == 0 {
+		return nil, errors.New("UnicodeString is empty")
+	}
+
+	buf := make([]byte, s.Length)
+	err := ReadProcessMemory(handle, s.Buffer, &buf[0], uintptr(s.Length))
+	if err != nil {
+		return nil, fmt.Errorf("ReadProcessMemory failed for UnicodeString %w", err)
+	}
+
+	return buf, nil
+}
+
+func ByteSliceToStringSlice(buf []byte) ([]string, error) {
+	if len(buf) == 0 {
+		return nil, errors.New("empty buffer")
+	}
+
+	words := make([]uint16, len(buf)/2)
+	for i := range words {
+		words[i] = uint16(buf[i*2]) | uint16(buf[i*2+1])<<8
+	}
+
+	var args []string
+	var start int
+	for i, w := range words {
+		if w == 0 {
+			if i > start {
+				args = append(args, syscall.UTF16ToString(words[start:i]))
+			}
+			start = i + 1
+		}
+	}
+	if start < len(words) {
+		args = append(args, syscall.UTF16ToString(words[start:]))
+	}
+
+	return args, nil
+}
+
+func ReadProcessMemory(handle syscall.Handle, baseAddress uintptr, dest *byte, size uintptr) error {
+	var numRead uintptr
+	err := _ReadProcessMemory(handle, baseAddress, dest, size, &numRead)
+	if err != nil {
+		return fmt.Errorf("ReadProcessMemory failed %w", err)
+	}
+	if numRead != size {
+		return fmt.Errorf("ReadProcessMemory read %d bytes, expected %d", numRead, size)
+	}
+	return nil
+}
+
+func GetTickCount64() (uint64, error) {
+	ticks, err := _GetTickCount64()
+	if err != nil {
+		return 0, fmt.Errorf("GetTickCount64 failed %w", err)
+	}
+	return ticks, nil
 }
 
 // Use "GOOS=windows go generate -v -x ." to generate the source.
@@ -383,3 +475,5 @@ func Process32Next(handle syscall.Handle) (ProcessEntry32, error) {
 //sys   _LookupPrivilegeName(systemName string, luid *int64, buffer *uint16, size *uint32) (err error) = advapi32.LookupPrivilegeNameW
 //sys   _LookupPrivilegeValue(systemName string, name string, luid *int64) (err error) = advapi32.LookupPrivilegeValueW
 //sys   _AdjustTokenPrivileges(token syscall.Token, releaseAll bool, input *byte, outputSize uint32, output *byte, requiredSize *uint32) (success bool, err error) [true] = advapi32.AdjustTokenPrivileges
+//sys   _ReadProcessMemory(handle syscall.Handle, baseAddress uintptr, buffer *byte, size uintptr, numRead *uintptr) (err error) = kernel32.ReadProcessMemory
+//sys   _GetTickCount64() (milliseconds uint64, err error) = kernel32.GetTickCount64

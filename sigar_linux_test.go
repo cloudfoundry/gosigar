@@ -611,7 +611,7 @@ DirectMap2M:    34983936 kB`)
 			//
 			// Note that `MemAvailable present yes/no` does not matter in
 			// the results, as the cgroup derived results will write over
-			// them. Thus we have 2 groups a 4 tests, with identical
+			// them. Thus, we have 2 groups and 4 tests, with identical
 			// results for the equivalent tests of each group.
 
 			Describe("With MemAvailable. With v1 cgroup limit. With v1 cgroup swap", func() {

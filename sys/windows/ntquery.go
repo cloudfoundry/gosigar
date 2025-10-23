@@ -1,18 +1,16 @@
 //go:build windows
-// +build windows
 
 package windows
 
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"runtime"
 	"syscall"
 	"time"
 	"unsafe"
-
-	"github.com/pkg/errors"
 )
 
 // On both 32-bit and 64-bit systems NtQuerySystemInformation expects the
@@ -41,7 +39,7 @@ func NtQueryProcessBasicInformation(handle syscall.Handle) (ProcessBasicInformat
 	size := uint32(unsafe.Sizeof(processBasicInfo))
 	ntStatus, _ := _NtQueryInformationProcess(handle, 0, processBasicInfoPtr, size, nil) //nolint:errcheck
 	if ntStatus != 0 {
-		return ProcessBasicInformation{}, errors.Errorf("NtQueryInformationProcess failed, NTSTATUS=0x%X", ntStatus)
+		return ProcessBasicInformation{}, fmt.Errorf("NtQueryInformationProcess failed, NTSTATUS=0x%X", ntStatus)
 	}
 
 	return processBasicInfo, nil
@@ -89,7 +87,7 @@ func NtQuerySystemProcessorPerformanceInformation() ([]SystemProcessorPerformanc
 	var returnLength uint32
 	ntStatus, _ := _NtQuerySystemInformation(systemProcessorPerformanceInformation, &b[0], uint32(len(b)), &returnLength) //nolint:errcheck
 	if ntStatus != STATUS_SUCCESS {
-		return nil, errors.Errorf("NtQuerySystemInformation failed, NTSTATUS=0x%X, bufLength=%v, returnLength=%v", ntStatus, len(b), returnLength)
+		return nil, fmt.Errorf("NtQuerySystemInformation failed, NTSTATUS=0x%X, bufLength=%v, returnLength=%v", ntStatus, len(b), returnLength)
 	}
 
 	return readSystemProcessorPerformanceInformationBuffer(b)
@@ -107,14 +105,14 @@ func readSystemProcessorPerformanceInformationBuffer(b []byte) ([]SystemProcesso
 	for i := 0; i < n; i++ {
 		_, err := r.Seek(int64(i*sizeofSystemProcessorPerformanceInformation), io.SeekStart)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to seek to cpuN=%v in buffer", i)
+			return nil, fmt.Errorf("failed to seek to cpuN=%v in buffer %w", i, err)
 		}
 
 		times := make([]uint64, 3)
 		for j := range times {
 			err := binary.Read(r, binary.LittleEndian, &times[j])
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed reading cpu times for cpuN=%v", i)
+				return nil, fmt.Errorf("failed reading cpu times for cpuN=%v %w", i, err)
 			}
 		}
 

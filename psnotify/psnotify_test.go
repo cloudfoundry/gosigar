@@ -1,5 +1,4 @@
 //go:build darwin || freebsd || linux || netbsd || openbsd
-// +build darwin freebsd linux netbsd openbsd
 
 package psnotify
 
@@ -186,7 +185,7 @@ func TestWatchFork(t *testing.T) {
 
 	tw := newTestWatcher(t)
 
-	// no watches added yet, so this fork event will no be captured
+	// no watches added yet, so this fork event will not be captured
 	runCommand(t, "date")
 
 	// watch fork events for this process

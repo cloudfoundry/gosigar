@@ -1,5 +1,4 @@
 //go:build darwin || linux || netbsd || openbsd
-// +build darwin linux netbsd openbsd
 
 package sigar
 
@@ -7,7 +6,7 @@ import (
 	"syscall"
 )
 
-func (self *FileSystemUsage) Get(path string) error { //nolint:staticcheck
+func (fs *FileSystemUsage) Get(path string) error { //nolint:staticcheck
 	stat := syscall.Statfs_t{}
 	err := syscall.Statfs(path, &stat)
 	if err != nil {
@@ -16,12 +15,12 @@ func (self *FileSystemUsage) Get(path string) error { //nolint:staticcheck
 
 	bsize := stat.Bsize / 512
 
-	self.Total = (uint64(stat.Blocks) * uint64(bsize)) >> 1
-	self.Free = (uint64(stat.Bfree) * uint64(bsize)) >> 1
-	self.Avail = (uint64(stat.Bavail) * uint64(bsize)) >> 1
-	self.Used = self.Total - self.Free
-	self.Files = stat.Files
-	self.FreeFiles = stat.Ffree
+	fs.Total = (stat.Blocks * uint64(bsize)) >> 1
+	fs.Free = (stat.Bfree * uint64(bsize)) >> 1
+	fs.Avail = (stat.Bavail * uint64(bsize)) >> 1
+	fs.Used = fs.Total - fs.Free
+	fs.Files = stat.Files
+	fs.FreeFiles = stat.Ffree
 
 	return nil
 }
