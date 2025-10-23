@@ -159,18 +159,18 @@ func readProcFile(pid int, name string) ([]byte, error) {
 	return contents, err
 }
 
-func (self *Uptime) Get() error {
+func (u *Uptime) Get() error {
 	var tv unix.Timeval
 	boottimeRaw, err := unix.SysctlRaw("kern.boottime")
 	if err != nil {
 		return err
 	}
 	tv = *(*unix.Timeval)(unsafe.Pointer(&boottimeRaw[0]))
-	self.Length = time.Since(time.Unix(int64(tv.Sec), int64(tv.Usec)*1000)).Seconds()
+	u.Length = time.Since(time.Unix(int64(tv.Sec), int64(tv.Usec)*1000)).Seconds()
 	return nil
 }
 
-func (self *LoadAverage) Get() error {
+func (la *LoadAverage) Get() error {
 	avgRaw, err := unix.SysctlRaw("vm.loadavg")
 	if err != nil {
 		return err
@@ -178,9 +178,9 @@ func (self *LoadAverage) Get() error {
 	avg := *(*loadStruct)(unsafe.Pointer(&avgRaw[0]))
 	fscale := float64(avg.Fscale)
 
-	self.One = float64(avg.Ldavg[0]) / fscale
-	self.Five = float64(avg.Ldavg[1]) / fscale
-	self.Fifteen = float64(avg.Ldavg[2]) / fscale
+	la.One = float64(avg.Ldavg[0]) / fscale
+	la.Five = float64(avg.Ldavg[1]) / fscale
+	la.Fifteen = float64(avg.Ldavg[2]) / fscale
 
 	return nil
 }
@@ -298,7 +298,7 @@ func (pt *ProcTime) Get(pid int) error {
 	return nil
 }
 
-func (self *Cpu) Get() error {
+func (c *Cpu) Get() error {
 	cpTime, err := unix.SysctlRaw("kern.cp_time")
 	if err != nil {
 		return err
@@ -306,19 +306,19 @@ func (self *Cpu) Get() error {
 
 	cpuRaw := *(*cpuStat)(unsafe.Pointer(&cpTime[0]))
 
-	self.User = uint64(cpuRaw.user)
-	self.Nice = uint64(cpuRaw.nice)
-	self.Sys = uint64(cpuRaw.sys)
-	self.Irq = uint64(cpuRaw.irq)
-	self.Idle = uint64(cpuRaw.idle)
+	c.User = uint64(cpuRaw.user)
+	c.Nice = uint64(cpuRaw.nice)
+	c.Sys = uint64(cpuRaw.sys)
+	c.Irq = uint64(cpuRaw.irq)
+	c.Idle = uint64(cpuRaw.idle)
 
 	return nil
 }
 
-func (self *Mem) Get() error {
+func (m *Mem) Get() error {
 	var err error
 
-	self.Total, err = unix.SysctlUint64("hw.physmem")
+	m.Total, err = unix.SysctlUint64("hw.physmem")
 	if err != nil {
 		return err
 	}
@@ -332,19 +332,19 @@ func (self *Mem) Get() error {
 	if err != nil {
 		return err
 	}
-	self.Free = uint64(freePages) * uint64(pageSize)
+	m.Free = uint64(freePages) * uint64(pageSize)
 
-	self.Used = self.Total - self.Free
+	m.Used = m.Total - m.Free
 	return nil
 }
 
-func (self *Mem) GetIgnoringCGroups() error {
-	return self.Get()
+func (m *Mem) GetIgnoringCGroups() error {
+	return m.Get()
 }
 
-func (self *Swap) Get() error {
+func (s *Swap) Get() error {
 	var err error
-	self.Total, err = unix.SysctlUint64("vm.swap_total")
+	s.Total, err = unix.SysctlUint64("vm.swap_total")
 	if err != nil {
 		return err
 	}

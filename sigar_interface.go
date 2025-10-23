@@ -27,21 +27,21 @@ type Cpu struct {
 	Stolen  uint64
 }
 
-func (cpu *Cpu) Total() uint64 {
-	return cpu.User + cpu.Nice + cpu.Sys + cpu.Idle +
-		cpu.Wait + cpu.Irq + cpu.SoftIrq + cpu.Stolen
+func (c *Cpu) Total() uint64 {
+	return c.User + c.Nice + c.Sys + c.Idle +
+		c.Wait + c.Irq + c.SoftIrq + c.Stolen
 }
 
-func (cpu Cpu) Delta(other Cpu) Cpu {
+func (c *Cpu) Delta(other Cpu) Cpu {
 	return Cpu{
-		User:    cpu.User - other.User,
-		Nice:    cpu.Nice - other.Nice,
-		Sys:     cpu.Sys - other.Sys,
-		Idle:    cpu.Idle - other.Idle,
-		Wait:    cpu.Wait - other.Wait,
-		Irq:     cpu.Irq - other.Irq,
-		SoftIrq: cpu.SoftIrq - other.SoftIrq,
-		Stolen:  cpu.Stolen - other.Stolen,
+		User:    c.User - other.User,
+		Nice:    c.Nice - other.Nice,
+		Sys:     c.Sys - other.Sys,
+		Idle:    c.Idle - other.Idle,
+		Wait:    c.Wait - other.Wait,
+		Irq:     c.Irq - other.Irq,
+		SoftIrq: c.SoftIrq - other.SoftIrq,
+		Stolen:  c.Stolen - other.Stolen,
 	}
 }
 

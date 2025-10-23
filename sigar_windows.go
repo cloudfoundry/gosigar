@@ -27,7 +27,7 @@ var (
 	processQueryLimitedInfoAccess = windows.PROCESS_QUERY_LIMITED_INFORMATION
 )
 
-func (self *LoadAverage) Get() error { //nolint:staticcheck
+func (la *LoadAverage) Get() error { //nolint:staticcheck
 	return ErrNotImplemented
 }
 

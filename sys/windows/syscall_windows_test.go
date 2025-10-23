@@ -124,7 +124,7 @@ func TestCreateToolhelp32Snapshot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer syscall.CloseHandle(syscall.Handle(handle)) //nolint:errcheck
+	defer syscall.CloseHandle(handle) //nolint:errcheck
 
 	// Iterate over the snapshots until our PID is found.
 	pid := uint32(syscall.Getpid())

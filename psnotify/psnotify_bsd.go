@@ -1,7 +1,8 @@
 //go:build darwin || freebsd || netbsd || openbsd
 
-// Go interface to BSD kqueue process events.
 package psnotify
+
+// Go interface to BSD kqueue process events.
 
 import (
 	"syscall"

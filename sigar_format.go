@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Go version of apr_strfsize
+// FormatSize Go version of apr_strfsize
 func FormatSize(size uint64) string {
 	ord := []string{"K", "M", "G", "T", "P", "E"}
 	o := 0
@@ -58,15 +58,15 @@ func FormatPercent(percent float64) string {
 }
 
 func (fs *FileSystemUsage) UsePercent() float64 { //nolint:staticcheck
-	b_used := (fs.Total - fs.Free) / 1024
-	b_avail := fs.Avail / 1024
-	utotal := b_used + b_avail
-	used := b_used
+	bUsed := (fs.Total - fs.Free) / 1024
+	bAvail := fs.Avail / 1024
+	uTotal := bUsed + bAvail
+	used := bUsed
 
-	if utotal != 0 {
+	if uTotal != 0 {
 		u100 := used * 100
-		pct := u100 / utotal
-		if u100%utotal != 0 {
+		pct := u100 / uTotal
+		if u100%uTotal != 0 {
 			pct += 1
 		}
 		return (float64(pct) / float64(100)) * 100.0
@@ -75,10 +75,10 @@ func (fs *FileSystemUsage) UsePercent() float64 { //nolint:staticcheck
 	return 0.0
 }
 
-func (self *Uptime) Format() string { //nolint:staticcheck
+func (u *Uptime) Format() string { //nolint:staticcheck
 	buf := new(bytes.Buffer)
 	w := bufio.NewWriter(buf)
-	uptime := uint64(self.Length)
+	uptime := uint64(u.Length)
 
 	days := uptime / (60 * 60 * 24)
 

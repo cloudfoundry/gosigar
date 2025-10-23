@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
@@ -26,7 +27,7 @@ const (
 	SeDebugPrivilege = "SeDebugPrivilege"
 )
 
-// Errors returned by AdjustTokenPrivileges.
+// ERROR_NOT_ALL_ASSIGNED Errors returned by AdjustTokenPrivileges.
 const (
 	ERROR_NOT_ALL_ASSIGNED syscall.Errno = 1300
 )
@@ -101,8 +102,8 @@ type DebugInfo struct {
 }
 
 func (d DebugInfo) String() string {
-	bytes, _ := json.Marshal(d) //nolint:errcheck
-	return string(bytes)
+	b, _ := json.Marshal(d) //nolint:errcheck
+	return string(b)
 }
 
 // LookupPrivilegeName looks up a privilege name given a LUID value.
@@ -156,7 +157,7 @@ func EnableTokenPrivileges(token syscall.Token, privileges ...string) error {
 	if !success {
 		return err
 	}
-	if err == ERROR_NOT_ALL_ASSIGNED {
+	if errors.Is(err, ERROR_NOT_ALL_ASSIGNED) {
 		return fmt.Errorf("error not all privileges were assigned %w", err)
 	}
 
