@@ -172,7 +172,7 @@ func (pt *ProcTime) Get(pid int) error { //nolint:staticcheck
 	}
 
 	// Windows epoch times are expressed as time elapsed since midnight on
-	// January 1, 1601 at Greenwich, England. This converts the Filetime to
+	// January 1, 1601, at Greenwich, England. This converts the Filetime to
 	// unix epoch in milliseconds.
 	pt.StartTime = uint64(CPU.CreationTime.Nanoseconds() / 1e6)
 
