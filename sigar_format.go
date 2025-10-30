@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Go version of apr_strfsize
+// FormatSize Go version of apr_strfsize
 func FormatSize(size uint64) string {
 	ord := []string{"K", "M", "G", "T", "P", "E"}
 	o := 0
@@ -57,16 +57,16 @@ func FormatPercent(percent float64) string {
 	return strconv.FormatFloat(percent, 'f', -1, 64) + "%"
 }
 
-func (self *FileSystemUsage) UsePercent() float64 { //nolint:staticcheck
-	b_used := (self.Total - self.Free) / 1024
-	b_avail := self.Avail / 1024
-	utotal := b_used + b_avail
-	used := b_used
+func (fs *FileSystemUsage) UsePercent() float64 { //nolint:staticcheck
+	bUsed := (fs.Total - fs.Free) / 1024
+	bAvail := fs.Avail / 1024
+	uTotal := bUsed + bAvail
+	used := bUsed
 
-	if utotal != 0 {
+	if uTotal != 0 {
 		u100 := used * 100
-		pct := u100 / utotal
-		if u100%utotal != 0 {
+		pct := u100 / uTotal
+		if u100%uTotal != 0 {
 			pct += 1
 		}
 		return (float64(pct) / float64(100)) * 100.0
@@ -75,10 +75,10 @@ func (self *FileSystemUsage) UsePercent() float64 { //nolint:staticcheck
 	return 0.0
 }
 
-func (self *Uptime) Format() string { //nolint:staticcheck
+func (u *Uptime) Format() string { //nolint:staticcheck
 	buf := new(bytes.Buffer)
 	w := bufio.NewWriter(buf)
-	uptime := uint64(self.Length)
+	uptime := uint64(u.Length)
 
 	days := uptime / (60 * 60 * 24)
 
@@ -101,11 +101,11 @@ func (self *Uptime) Format() string { //nolint:staticcheck
 	return buf.String()
 }
 
-func (self *ProcTime) FormatStartTime() string { //nolint:staticcheck
-	if self.StartTime == 0 {
+func (pt *ProcTime) FormatStartTime() string { //nolint:staticcheck
+	if pt.StartTime == 0 {
 		return "00:00"
 	}
-	start := time.Unix(int64(self.StartTime)/1000, 0)
+	start := time.Unix(int64(pt.StartTime)/1000, 0)
 	format := "Jan02"
 	if time.Since(start).Seconds() < (60 * 60 * 24) {
 		format = "15:04"
@@ -113,8 +113,8 @@ func (self *ProcTime) FormatStartTime() string { //nolint:staticcheck
 	return start.Format(format)
 }
 
-func (self *ProcTime) FormatTotal() string { //nolint:staticcheck
-	t := self.Total / 1000
+func (pt *ProcTime) FormatTotal() string { //nolint:staticcheck
+	t := pt.Total / 1000
 	ss := t % 60
 	t /= 60
 	mm := t % 60

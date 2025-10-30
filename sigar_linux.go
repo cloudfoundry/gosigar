@@ -77,7 +77,7 @@ func init() {
 	})
 }
 
-func (self *LoadAverage) Get() error { //nolint:staticcheck
+func (la *LoadAverage) Get() error { //nolint:staticcheck
 	line, err := os.ReadFile(Procd + "/loadavg")
 	if err != nil {
 		return nil
@@ -85,39 +85,39 @@ func (self *LoadAverage) Get() error { //nolint:staticcheck
 
 	fields := strings.Fields(string(line))
 
-	self.One, _ = strconv.ParseFloat(fields[0], 64)     //nolint:errcheck
-	self.Five, _ = strconv.ParseFloat(fields[1], 64)    //nolint:errcheck
-	self.Fifteen, _ = strconv.ParseFloat(fields[2], 64) //nolint:errcheck
+	la.One, _ = strconv.ParseFloat(fields[0], 64)     //nolint:errcheck
+	la.Five, _ = strconv.ParseFloat(fields[1], 64)    //nolint:errcheck
+	la.Fifteen, _ = strconv.ParseFloat(fields[2], 64) //nolint:errcheck
 
 	return nil
 }
 
-func (self *Uptime) Get() error { //nolint:staticcheck
+func (u *Uptime) Get() error { //nolint:staticcheck
 	sysinfo := syscall.Sysinfo_t{}
 
 	if err := syscall.Sysinfo(&sysinfo); err != nil {
 		return err
 	}
 
-	self.Length = float64(sysinfo.Uptime)
+	u.Length = float64(sysinfo.Uptime)
 
 	return nil
 }
 
-func (self *Mem) Get() error { //nolint:staticcheck
-	return self.get(false)
+func (m *Mem) Get() error { //nolint:staticcheck
+	return m.get(false)
 }
 
-func (self *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
-	return self.get(true)
+func (m *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
+	return m.get(true)
 }
 
-func (self *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
+func (m *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
 	var available = MaxUint64
 	var buffers, cached uint64
 	table := map[string]*uint64{
-		"MemTotal":     &self.Total,
-		"MemFree":      &self.Free,
+		"MemTotal":     &m.Total,
+		"MemFree":      &m.Free,
 		"MemAvailable": &available,
 		"Buffers":      &buffers,
 		"Cached":       &cached,
@@ -128,13 +128,13 @@ func (self *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
 	}
 
 	if available == MaxUint64 {
-		self.ActualFree = self.Free + buffers + cached
+		m.ActualFree = m.Free + buffers + cached
 	} else {
-		self.ActualFree = available
+		m.ActualFree = available
 	}
 
-	self.Used = self.Total - self.Free
-	self.ActualUsed = self.Total - self.ActualFree
+	m.Used = m.Total - m.Free
+	m.ActualUsed = m.Total - m.ActualFree
 
 	if ignoreCGroups {
 		return nil
@@ -159,7 +159,7 @@ func (self *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
 	//
 	// (*) There does not seem to be a truly reliable and portable
 	//     means of detecting execution inside a container vs
-	//     outside. Between all the platforms (macos, linux,
+	//     outside. Between all the platforms (macOS, linux,
 	//     windows), and container runtimes (docker, lxc, oci, ...).
 	//
 	// (**) The exact value actually is 2^63 - 4096, i.e
@@ -175,11 +175,11 @@ func (self *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
 	cgroupLimit, err := determineMemoryLimit(cgroup)
 	// (x) If the limit is not available or bogus we keep the host data as limit.
 
-	if err == nil && cgroupLimit < self.Total {
+	if err == nil && cgroupLimit < m.Total {
 		// See (2) above why only a cgroup limit less than the
 		// host total is accepted as the new total available
 		// memory in the cgroup.
-		self.Total = cgroupLimit
+		m.Total = cgroupLimit
 	}
 
 	rss, err := determineMemoryUsage(cgroup)
@@ -198,42 +198,41 @@ func (self *Mem) get(ignoreCGroups bool) error { //nolint:staticcheck
 		swap = 0
 	}
 
-	self.Used = rss + swap
-	self.Free = self.Total - self.Used
+	m.Used = rss + swap
+	m.Free = m.Total - m.Used
 
-	self.ActualUsed = self.Used
-	self.ActualFree = self.Free
+	m.ActualUsed = m.Used
+	m.ActualFree = m.Free
 
 	return nil
 }
 
-func (self *Swap) Get() error { //nolint:staticcheck
+func (s *Swap) Get() error { //nolint:staticcheck
 	table := map[string]*uint64{
-		"SwapTotal": &self.Total,
-		"SwapFree":  &self.Free,
+		"SwapTotal": &s.Total,
+		"SwapFree":  &s.Free,
 	}
 
 	if err := parseMeminfo(table); err != nil {
 		return err
 	}
 
-	self.Used = self.Total - self.Free
+	s.Used = s.Total - s.Free
 	return nil
 }
 
-func (self *Cpu) Get() error { //nolint:staticcheck
+func (c *Cpu) Get() error { //nolint:staticcheck
 	return readFile(Procd+"/stat", func(line string) bool {
 		if len(line) > 4 && line[0:4] == "cpu " {
-			parseCpuStat(self, line) //nolint:errcheck
+			parseCpuStat(c, line) //nolint:errcheck
 			return false
 		}
 		return true
-
 	})
 }
 
-func (self *CpuList) Get() error { //nolint:staticcheck
-	capacity := len(self.List)
+func (cl *CpuList) Get() error { //nolint:staticcheck
+	capacity := len(cl.List)
 	if capacity == 0 {
 		capacity = 4
 	}
@@ -248,17 +247,17 @@ func (self *CpuList) Get() error { //nolint:staticcheck
 		return true
 	})
 
-	self.List = list
+	cl.List = list
 
 	return err
 }
 
-func (self *FileSystemList) Get() error { //nolint:staticcheck
+func (fsl *FileSystemList) Get() error { //nolint:staticcheck
 	src := Etcd + "/mtab"
 	if _, err := os.Stat(src); err != nil {
 		src = Procd + "/mounts"
 	}
-	capacity := len(self.List)
+	capacity := len(fsl.List)
 	if capacity == 0 {
 		capacity = 10
 	}
@@ -278,12 +277,12 @@ func (self *FileSystemList) Get() error { //nolint:staticcheck
 		return true
 	})
 
-	self.List = fslist
+	fsl.List = fslist
 
 	return err
 }
 
-func (self *ProcList) Get() error { //nolint:staticcheck
+func (pl *ProcList) Get() error { //nolint:staticcheck
 	dir, err := os.Open(Procd)
 	if err != nil {
 		return err
@@ -310,12 +309,12 @@ func (self *ProcList) Get() error { //nolint:staticcheck
 		}
 	}
 
-	self.List = list
+	pl.List = list
 
 	return nil
 }
 
-func (self *ProcState) Get(pid int) error { //nolint:staticcheck
+func (ps *ProcState) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "stat")
 	if err != nil {
 		return err
@@ -323,24 +322,24 @@ func (self *ProcState) Get(pid int) error { //nolint:staticcheck
 
 	fields := strings.Fields(string(contents))
 
-	self.Name = fields[1][1 : len(fields[1])-1] // strip ()'s
+	ps.Name = fields[1][1 : len(fields[1])-1] // strip ()'s
 
-	self.State = RunState(fields[2][0])
+	ps.State = RunState(fields[2][0])
 
-	self.Ppid, _ = strconv.Atoi(fields[3]) //nolint:errcheck
+	ps.Ppid, _ = strconv.Atoi(fields[3]) //nolint:errcheck
 
-	self.Tty, _ = strconv.Atoi(fields[6]) //nolint:errcheck
+	ps.Tty, _ = strconv.Atoi(fields[6]) //nolint:errcheck
 
-	self.Priority, _ = strconv.Atoi(fields[17]) //nolint:errcheck
+	ps.Priority, _ = strconv.Atoi(fields[17]) //nolint:errcheck
 
-	self.Nice, _ = strconv.Atoi(fields[18]) //nolint:errcheck
+	ps.Nice, _ = strconv.Atoi(fields[18]) //nolint:errcheck
 
-	self.Processor, _ = strconv.Atoi(fields[38]) //nolint:errcheck
+	ps.Processor, _ = strconv.Atoi(fields[38]) //nolint:errcheck
 
 	return nil
 }
 
-func (self *ProcMem) Get(pid int) error { //nolint:staticcheck
+func (pm *ProcMem) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "statm")
 	if err != nil {
 		return err
@@ -349,13 +348,13 @@ func (self *ProcMem) Get(pid int) error { //nolint:staticcheck
 	fields := strings.Fields(string(contents))
 
 	size, _ := strtoull(fields[0]) //nolint:errcheck
-	self.Size = size << 12
+	pm.Size = size << 12
 
 	rss, _ := strtoull(fields[1]) //nolint:errcheck
-	self.Resident = rss << 12
+	pm.Resident = rss << 12
 
 	share, _ := strtoull(fields[2]) //nolint:errcheck
-	self.Share = share << 12
+	pm.Share = share << 12
 
 	contents, err = readProcFile(pid, "stat")
 	if err != nil {
@@ -364,14 +363,14 @@ func (self *ProcMem) Get(pid int) error { //nolint:staticcheck
 
 	fields = strings.Fields(string(contents))
 
-	self.MinorFaults, _ = strtoull(fields[10]) //nolint:errcheck
-	self.MajorFaults, _ = strtoull(fields[12]) //nolint:errcheck
-	self.PageFaults = self.MinorFaults + self.MajorFaults
+	pm.MinorFaults, _ = strtoull(fields[10]) //nolint:errcheck
+	pm.MajorFaults, _ = strtoull(fields[12]) //nolint:errcheck
+	pm.PageFaults = pm.MinorFaults + pm.MajorFaults
 
 	return nil
 }
 
-func (self *ProcTime) Get(pid int) error { //nolint:staticcheck
+func (pt *ProcTime) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "stat")
 	if err != nil {
 		return err
@@ -382,20 +381,20 @@ func (self *ProcTime) Get(pid int) error { //nolint:staticcheck
 	user, _ := strtoull(fields[13]) //nolint:errcheck
 	sys, _ := strtoull(fields[14])  //nolint:errcheck
 	// convert to millis
-	self.User = user * (1000 / system.ticks)
-	self.Sys = sys * (1000 / system.ticks)
-	self.Total = self.User + self.Sys
+	pt.User = user * (1000 / system.ticks)
+	pt.Sys = sys * (1000 / system.ticks)
+	pt.Total = pt.User + pt.Sys
 
 	// convert to millis
-	self.StartTime, _ = strtoull(fields[21]) //nolint:errcheck
-	self.StartTime /= system.ticks
-	self.StartTime += system.btime
-	self.StartTime *= 1000
+	pt.StartTime, _ = strtoull(fields[21]) //nolint:errcheck
+	pt.StartTime /= system.ticks
+	pt.StartTime += system.btime
+	pt.StartTime *= 1000
 
 	return nil
 }
 
-func (self *ProcArgs) Get(pid int) error { //nolint:staticcheck
+func (pa *ProcArgs) Get(pid int) error { //nolint:staticcheck
 	contents, err := readProcFile(pid, "cmdline")
 	if err != nil {
 		return err
@@ -413,16 +412,16 @@ func (self *ProcArgs) Get(pid int) error { //nolint:staticcheck
 		args = append(args, string(chop(arg)))
 	}
 
-	self.List = args
+	pa.List = args
 
 	return nil
 }
 
-func (self *ProcExe) Get(pid int) error { //nolint:staticcheck
+func (pe *ProcExe) Get(pid int) error { //nolint:staticcheck
 	fields := map[string]*string{
-		"exe":  &self.Name,
-		"cwd":  &self.Cwd,
-		"root": &self.Root,
+		"exe":  &pe.Name,
+		"cwd":  &pe.Cwd,
+		"root": &pe.Root,
 	}
 
 	for name, field := range fields {

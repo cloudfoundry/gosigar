@@ -1,12 +1,12 @@
 package windows
 
 import (
+	"errors"
 	"os"
 	"runtime"
 	"syscall"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -102,7 +102,7 @@ func TestGetDiskFreeSpaceEx(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Ignore CDROM drives. They return an error if the drive is emtpy.
+		// Ignore CD-ROM drives. They return an error if the drive is empty.
 		if dt != DRIVE_CDROM {
 			free, total, totalFree, err := GetDiskFreeSpaceEx(drive)
 			if err != nil {
@@ -124,13 +124,13 @@ func TestCreateToolhelp32Snapshot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer syscall.CloseHandle(syscall.Handle(handle)) //nolint:errcheck
+	defer syscall.CloseHandle(handle) //nolint:errcheck
 
 	// Iterate over the snapshots until our PID is found.
 	pid := uint32(syscall.Getpid())
 	for {
 		process, err := Process32Next(handle)
-		if errors.Cause(err) == syscall.ERROR_NO_MORE_FILES {
+		if errors.Is(err, syscall.ERROR_NO_MORE_FILES) {
 			break
 		}
 		if err != nil {

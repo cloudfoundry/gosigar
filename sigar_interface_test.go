@@ -1,6 +1,7 @@
 package sigar
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -15,7 +16,7 @@ var _ = Describe("Sigar", func() {
 	It("cpu", func() {
 		cpu := Cpu{}
 		err := cpu.Get()
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -24,7 +25,7 @@ var _ = Describe("Sigar", func() {
 	It("load average", func() {
 		avg := LoadAverage{}
 		err := avg.Get()
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -33,7 +34,7 @@ var _ = Describe("Sigar", func() {
 	It("uptime", func() {
 		uptime := Uptime{}
 		err := uptime.Get()
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -43,7 +44,7 @@ var _ = Describe("Sigar", func() {
 	It("mem", func() {
 		mem := Mem{}
 		err := mem.Get()
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -54,7 +55,7 @@ var _ = Describe("Sigar", func() {
 	It("swap", func() {
 		swap := Swap{}
 		err := swap.Get()
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -64,7 +65,7 @@ var _ = Describe("Sigar", func() {
 	It("cpu list", func() {
 		cpulist := CpuList{}
 		err := cpulist.Get()
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -77,7 +78,7 @@ var _ = Describe("Sigar", func() {
 	It("file system list", func() {
 		fslist := FileSystemList{}
 		err := fslist.Get()
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -88,7 +89,7 @@ var _ = Describe("Sigar", func() {
 	It("file system usage", func() {
 		fsusage := FileSystemUsage{}
 		err := fsusage.Get("/")
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -100,7 +101,7 @@ var _ = Describe("Sigar", func() {
 	It("proc list", func() {
 		pids := ProcList{}
 		err := pids.Get()
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -114,7 +115,7 @@ var _ = Describe("Sigar", func() {
 	It("proc state", func() {
 		state := ProcState{}
 		err := state.Get(os.Getppid())
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -129,7 +130,7 @@ var _ = Describe("Sigar", func() {
 	It("proc cpu", func() {
 		pCpu := ProcCpu{}
 		err := pCpu.Get(os.Getppid())
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -141,7 +142,7 @@ var _ = Describe("Sigar", func() {
 	It("proc mem", func() {
 		mem := ProcMem{}
 		err := mem.Get(os.Getppid())
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -153,7 +154,7 @@ var _ = Describe("Sigar", func() {
 	It("proc time", func() {
 		time := ProcTime{}
 		err := time.Get(os.Getppid())
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -165,7 +166,7 @@ var _ = Describe("Sigar", func() {
 	It("proc args", func() {
 		args := ProcArgs{}
 		err := args.Get(os.Getppid())
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())
@@ -176,7 +177,7 @@ var _ = Describe("Sigar", func() {
 	It("proc exe", func() {
 		exe := ProcExe{}
 		err := exe.Get(os.Getppid())
-		if err == ErrNotImplemented {
+		if errors.Is(err, ErrNotImplemented) {
 			Skip("Not implemented on " + runtime.GOOS)
 		}
 		Expect(err).ToNot(HaveOccurred())

@@ -27,34 +27,34 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func (self *LoadAverage) Get() error { //nolint:staticcheck
+func (la *LoadAverage) Get() error { //nolint:staticcheck
 	avg := []C.double{0, 0, 0}
 
 	C.getloadavg(&avg[0], C.int(len(avg)))
 
-	self.One = float64(avg[0])
-	self.Five = float64(avg[1])
-	self.Fifteen = float64(avg[2])
+	la.One = float64(avg[0])
+	la.Five = float64(avg[1])
+	la.Fifteen = float64(avg[2])
 
 	return nil
 }
 
-func (self *Uptime) Get() error { //nolint:staticcheck
+func (u *Uptime) Get() error { //nolint:staticcheck
 	tv := syscall.Timeval32{}
 
 	if err := sysctlbyname("kern.boottime", &tv); err != nil {
 		return err
 	}
 
-	self.Length = time.Since(time.Unix(int64(tv.Sec), int64(tv.Usec)*1000)).Seconds()
+	u.Length = time.Since(time.Unix(int64(tv.Sec), int64(tv.Usec)*1000)).Seconds()
 
 	return nil
 }
 
-func (self *Mem) Get() error { //nolint:staticcheck
+func (m *Mem) Get() error { //nolint:staticcheck
 	var vmstat C.vm_statistics_data_t
 
-	if err := sysctlbyname("hw.memsize", &self.Total); err != nil {
+	if err := sysctlbyname("hw.memsize", &m.Total); err != nil {
 		return err
 	}
 
@@ -63,38 +63,38 @@ func (self *Mem) Get() error { //nolint:staticcheck
 	}
 
 	kern := uint64(vmstat.inactive_count) << 12
-	self.Free = uint64(vmstat.free_count) << 12
+	m.Free = uint64(vmstat.free_count) << 12
 
-	self.Used = self.Total - self.Free
-	self.ActualFree = self.Free + kern
-	self.ActualUsed = self.Used - kern
+	m.Used = m.Total - m.Free
+	m.ActualFree = m.Free + kern
+	m.ActualUsed = m.Used - kern
 
 	return nil
 }
 
-func (self *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
-	return self.Get()
+func (m *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
+	return m.Get()
 }
 
 type xsw_usage struct {
 	Total, Avail, Used uint64
 }
 
-func (self *Swap) Get() error { //nolint:staticcheck
+func (s *Swap) Get() error { //nolint:staticcheck
 	sw_usage := xsw_usage{}
 
 	if err := sysctlbyname("vm.swapusage", &sw_usage); err != nil {
 		return err
 	}
 
-	self.Total = sw_usage.Total
-	self.Used = sw_usage.Used
-	self.Free = sw_usage.Avail
+	s.Total = sw_usage.Total
+	s.Used = sw_usage.Used
+	s.Free = sw_usage.Avail
 
 	return nil
 }
 
-func (self *Cpu) Get() error { //nolint:staticcheck
+func (c *Cpu) Get() error { //nolint:staticcheck
 	var count C.mach_msg_type_number_t = C.HOST_CPU_LOAD_INFO_COUNT
 	var cpuload C.host_cpu_load_info_data_t
 
@@ -104,18 +104,18 @@ func (self *Cpu) Get() error { //nolint:staticcheck
 		&count)
 
 	if status != C.KERN_SUCCESS {
-		return fmt.Errorf("host_statistics error=%d", status)
+		return fmt.Errorf("host_statistics error=%d", int64(status))
 	}
 
-	self.User = uint64(cpuload.cpu_ticks[C.CPU_STATE_USER])
-	self.Sys = uint64(cpuload.cpu_ticks[C.CPU_STATE_SYSTEM])
-	self.Idle = uint64(cpuload.cpu_ticks[C.CPU_STATE_IDLE])
-	self.Nice = uint64(cpuload.cpu_ticks[C.CPU_STATE_NICE])
+	c.User = uint64(cpuload.cpu_ticks[C.CPU_STATE_USER])
+	c.Sys = uint64(cpuload.cpu_ticks[C.CPU_STATE_SYSTEM])
+	c.Idle = uint64(cpuload.cpu_ticks[C.CPU_STATE_IDLE])
+	c.Nice = uint64(cpuload.cpu_ticks[C.CPU_STATE_NICE])
 
 	return nil
 }
 
-func (self *CpuList) Get() error { //nolint:staticcheck
+func (cl *CpuList) Get() error { //nolint:staticcheck
 	var count C.mach_msg_type_number_t
 	var cpuload *C.processor_cpu_load_info_data_t
 	var ncpu C.natural_t
@@ -127,7 +127,7 @@ func (self *CpuList) Get() error { //nolint:staticcheck
 		&count)
 
 	if status != C.KERN_SUCCESS {
-		return fmt.Errorf("host_processor_info error=%d", status)
+		return fmt.Errorf("host_processor_info error=%d", int64(status))
 	}
 
 	// jump through some cgo casting hoops and ensure we properly free
@@ -147,7 +147,7 @@ func (self *CpuList) Get() error { //nolint:staticcheck
 
 	bbuf := bytes.NewBuffer(buf)
 
-	self.List = make([]Cpu, 0, ncpu)
+	cl.List = make([]Cpu, 0, ncpu)
 
 	for i := 0; i < int(ncpu); i++ {
 		cpu := Cpu{}
@@ -162,13 +162,13 @@ func (self *CpuList) Get() error { //nolint:staticcheck
 		cpu.Idle = uint64(cpu_ticks[C.CPU_STATE_IDLE])
 		cpu.Nice = uint64(cpu_ticks[C.CPU_STATE_NICE])
 
-		self.List = append(self.List, cpu)
+		cl.List = append(cl.List, cpu)
 	}
 
 	return nil
 }
 
-func (self *FileSystemList) Get() error { //nolint:staticcheck
+func (fsl *FileSystemList) Get() error { //nolint:staticcheck
 	num, err := getfsstat(nil, C.MNT_NOWAIT)
 	if num < 0 {
 		return err
@@ -193,12 +193,12 @@ func (self *FileSystemList) Get() error { //nolint:staticcheck
 		fslist = append(fslist, fs)
 	}
 
-	self.List = fslist
+	fsl.List = fslist
 
 	return err
 }
 
-func (self *ProcList) Get() error { //nolint:staticcheck
+func (pl *ProcList) Get() error { //nolint:staticcheck
 	n := C.proc_listpids(C.PROC_ALL_PIDS, 0, nil, 0)
 	if n <= 0 {
 		return syscall.EINVAL
@@ -225,82 +225,82 @@ func (self *ProcList) Get() error { //nolint:staticcheck
 		list = append(list, int(pid))
 	}
 
-	self.List = list
+	pl.List = list
 
 	return nil
 }
 
-func (self *ProcState) Get(pid int) error { //nolint:staticcheck
+func (ps *ProcState) Get(pid int) error { //nolint:staticcheck
 	info := C.struct_proc_taskallinfo{}
 
 	if err := task_info(pid, &info); err != nil {
 		return err
 	}
 
-	self.Name = C.GoString(&info.pbsd.pbi_comm[0])
+	ps.Name = C.GoString(&info.pbsd.pbi_comm[0])
 
 	switch info.pbsd.pbi_status {
 	case C.SIDL:
-		self.State = RunStateIdle
+		ps.State = RunStateIdle
 	case C.SRUN:
-		self.State = RunStateRun
+		ps.State = RunStateRun
 	case C.SSLEEP:
-		self.State = RunStateSleep
+		ps.State = RunStateSleep
 	case C.SSTOP:
-		self.State = RunStateStop
+		ps.State = RunStateStop
 	case C.SZOMB:
-		self.State = RunStateZombie
+		ps.State = RunStateZombie
 	default:
-		self.State = RunStateUnknown
+		ps.State = RunStateUnknown
 	}
 
-	self.Ppid = int(info.pbsd.pbi_ppid)
+	ps.Ppid = int(info.pbsd.pbi_ppid)
 
-	self.Tty = int(info.pbsd.e_tdev)
+	ps.Tty = int(info.pbsd.e_tdev)
 
-	self.Priority = int(info.ptinfo.pti_priority)
+	ps.Priority = int(info.ptinfo.pti_priority)
 
-	self.Nice = int(info.pbsd.pbi_nice)
+	ps.Nice = int(info.pbsd.pbi_nice)
 
 	return nil
 }
 
-func (self *ProcMem) Get(pid int) error { //nolint:staticcheck
+func (pm *ProcMem) Get(pid int) error { //nolint:staticcheck
 	info := C.struct_proc_taskallinfo{}
 
 	if err := task_info(pid, &info); err != nil {
 		return err
 	}
 
-	self.Size = uint64(info.ptinfo.pti_virtual_size)
-	self.Resident = uint64(info.ptinfo.pti_resident_size)
-	self.PageFaults = uint64(info.ptinfo.pti_faults)
+	pm.Size = uint64(info.ptinfo.pti_virtual_size)
+	pm.Resident = uint64(info.ptinfo.pti_resident_size)
+	pm.PageFaults = uint64(info.ptinfo.pti_faults)
 
 	return nil
 }
 
-func (self *ProcTime) Get(pid int) error { //nolint:staticcheck
+func (pt *ProcTime) Get(pid int) error { //nolint:staticcheck
 	info := C.struct_proc_taskallinfo{}
 
 	if err := task_info(pid, &info); err != nil {
 		return err
 	}
 
-	self.User =
+	pt.User =
 		uint64(info.ptinfo.pti_total_user) / uint64(time.Millisecond)
 
-	self.Sys =
+	pt.Sys =
 		uint64(info.ptinfo.pti_total_system) / uint64(time.Millisecond)
 
-	self.Total = self.User + self.Sys
+	pt.Total = pt.User + pt.Sys
 
-	self.StartTime = (uint64(info.pbsd.pbi_start_tvsec) * 1000) +
+	pt.StartTime = (uint64(info.pbsd.pbi_start_tvsec) * 1000) +
 		(uint64(info.pbsd.pbi_start_tvusec) / 1000)
 
 	return nil
 }
 
-func (self *ProcArgs) Get(pid int) error { //nolint:staticcheck
+func (pa *ProcArgs) Get(pid int) error { //nolint:staticcheck
 	var args []string
 
 	argv := func(arg string) {
@@ -309,14 +309,14 @@ func (self *ProcArgs) Get(pid int) error { //nolint:staticcheck
 
 	err := kern_procargs(pid, nil, argv, nil)
 
-	self.List = args
+	pa.List = args
 
 	return err
 }
 
-func (self *ProcExe) Get(pid int) error { //nolint:staticcheck
+func (pe *ProcExe) Get(pid int) error { //nolint:staticcheck
 	exe := func(arg string) {
-		self.Name = arg
+		pe.Name = arg
 	}
 
 	return kern_procargs(pid, exe, nil, nil)
@@ -394,7 +394,7 @@ func sysctl(mib []C.int, old *byte, oldlen *uintptr,
 	_, _, e1 := syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(p0),
 		uintptr(len(mib)),
 		uintptr(unsafe.Pointer(old)), uintptr(unsafe.Pointer(oldlen)),
-		uintptr(unsafe.Pointer(new)), uintptr(newlen))
+		uintptr(unsafe.Pointer(new)), newlen)
 	if e1 != 0 {
 		err = e1
 	}
@@ -411,7 +411,7 @@ func vm_info(vmstat *C.vm_statistics_data_t) error {
 		&count)
 
 	if status != C.KERN_SUCCESS {
-		return fmt.Errorf("host_statistics=%d", status)
+		return fmt.Errorf("host_statistics=%d", int64(status))
 	}
 
 	return nil

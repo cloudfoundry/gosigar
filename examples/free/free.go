@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	sigar "github.com/cloudfoundry/gosigar"
 )
@@ -18,15 +17,8 @@ func main() {
 	mem.Get()  //nolint:errcheck
 	swap.Get() //nolint:errcheck
 
-	fmt.Fprintf(os.Stdout, "%18s %10s %10s\n", //nolint:errcheck
-		"total", "used", "free")
-
-	fmt.Fprintf(os.Stdout, "Mem:    %10d %10d %10d\n", //nolint:errcheck
-		format(mem.Total), format(mem.Used), format(mem.Free))
-
-	fmt.Fprintf(os.Stdout, "-/+ buffers/cache: %10d %10d\n", //nolint:errcheck
-		format(mem.ActualUsed), format(mem.ActualFree))
-
-	fmt.Fprintf(os.Stdout, "Swap:   %10d %10d %10d\n", //nolint:errcheck
-		format(swap.Total), format(swap.Used), format(swap.Free))
+	fmt.Printf("%18s %10s %10s\n", "total", "used", "free")
+	fmt.Printf("Mem:    %10d %10d %10d\n", format(mem.Total), format(mem.Used), format(mem.Free))
+	fmt.Printf("-/+ buffers/cache: %10d %10d\n", format(mem.ActualUsed), format(mem.ActualFree))
+	fmt.Printf("Swap:   %10d %10d %10d\n", format(swap.Total), format(swap.Used), format(swap.Free))
 }

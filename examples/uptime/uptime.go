@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	sigar "github.com/cloudfoundry/gosigar"
@@ -19,7 +18,7 @@ func main() {
 		return
 	}
 
-	fmt.Fprintf(os.Stdout, " %s up %s load average: %.2f, %.2f, %.2f\n", //nolint:errcheck
+	fmt.Printf(" %s up %s load average: %.2f, %.2f, %.2f\n",
 		time.Now().Format("15:04:05"),
 		uptime.Format(),
 		avg.One, avg.Five, avg.Fifteen)
