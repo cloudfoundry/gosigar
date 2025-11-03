@@ -17,7 +17,7 @@ jobs:
   test-unit: # <- name
     strategy:
       matrix:
-        os: [macos-latest, windows-2022, ubuntu-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v5
