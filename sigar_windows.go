@@ -1,11 +1,8 @@
 package sigar
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"os/exec"
-	"strconv"
 	"syscall"
 	"time"
 	"unsafe"
@@ -74,35 +71,15 @@ func (m *Mem) GetIgnoringCGroups() error { //nolint:staticcheck
 }
 
 func (s *Swap) Get() error { //nolint:staticcheck
-	const MB = 1024 * 1024
-	out, err := exec.Command("wmic", "pagefile", "list", "full").Output()
+	memoryStatusEx, err := windows.GlobalMemoryStatusEx()
 	if err != nil {
-		return err
+		return fmt.Errorf("GlobalMemoryStatusEx: %w", err)
 	}
-	total, err := parseWmicOutput(out, []byte("AllocatedBaseSize"))
-	if err != nil {
-		return err
-	}
-	used, err := parseWmicOutput(out, []byte("CurrentUsage"))
-	if err != nil {
-		return err
-	}
-	s.Total = total * MB
-	s.Used = used * MB
-	s.Free = s.Total - s.Used
-	return nil
-}
 
-func parseWmicOutput(s, sep []byte) (uint64, error) {
-	bb := bytes.Split(s, []byte("\n"))
-	for i := 0; i < len(bb); i++ {
-		b := bytes.TrimSpace(bb[i])
-		n := bytes.IndexByte(b, '=')
-		if n > 0 && bytes.Equal(sep, b[:n]) {
-			return strconv.ParseUint(string(b[n+1:]), 10, 64)
-		}
-	}
-	return 0, errors.New("parseWmicOutput: missing field: " + string(sep))
+	s.Total = memoryStatusEx.TotalPageFile
+	s.Free = memoryStatusEx.AvailPageFile
+	s.Used = s.Total - s.Free
+	return nil
 }
 
 func (c *Cpu) Get() error { //nolint:staticcheck

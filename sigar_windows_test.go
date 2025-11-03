@@ -2,7 +2,6 @@ package sigar
 
 import (
 	"os"
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -10,7 +9,6 @@ import (
 )
 
 var _ = Describe("SigarWindows", func() {
-
 	Describe("Uptime", func() {
 		It("returns the uptime", func() {
 			var u Uptime
@@ -27,6 +25,16 @@ var _ = Describe("SigarWindows", func() {
 			Expect(mem.Free).To(BeNumerically(">", 0))
 			Expect(mem.ActualFree).To(BeNumerically(">", 0))
 			Expect(mem.Used).To(BeNumerically(">", 0))
+		})
+	})
+
+	Describe("Swap", func() {
+		It("gets the total memory", func() {
+			var swap Swap
+			Expect(swap.Get()).To(Succeed())
+			Expect(swap.Total).To(BeNumerically(">", 0))
+			Expect(swap.Free).To(BeNumerically(">", 0))
+			Expect(swap.Used).To(BeNumerically(">", 0))
 		})
 	})
 
@@ -61,38 +69,5 @@ var _ = Describe("SigarWindows", func() {
 				return cpu.Sys
 			}, time.Second*10).Should(BeNumerically(">", old.Sys))
 		})
-	})
-
-	Context("when parsing wmic output", func() {
-		It("should parse the output", func() {
-			res := strings.Join([]string{
-				`AllocatedBaseSize=4791`,
-				`CurrentUsage=393`,
-				`Description=C:\pagefile.sys`,
-				`InstallDate=20151221103329.285091-480`,
-				`Name=C:\pagefile.sys`,
-				`PeakUsage=2916`,
-				`Status=`,
-				`TempPageFile=FALSE`,
-			}, "\r\n")
-
-			out := []byte(res)
-			num, err := parseWmicOutput(out, []byte("CurrentUsage"))
-			Expect(err).To(BeNil())
-			Expect(num).To(Equal(uint64(393)))
-
-			num, err = parseWmicOutput(out, []byte("AllocatedBaseSize"))
-			Expect(err).To(BeNil())
-			Expect(num).To(Equal(uint64(4791)))
-
-			num, err = parseWmicOutput(out, []byte("Status"))
-			Expect(err).To(HaveOccurred())
-			Expect(num).To(Equal(uint64(0)))
-
-			num, err = parseWmicOutput(out, []byte("Current"))
-			Expect(err).To(HaveOccurred())
-			Expect(num).To(Equal(uint64(0)))
-		})
-
 	})
 })
