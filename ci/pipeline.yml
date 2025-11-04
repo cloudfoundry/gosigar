@@ -45,8 +45,8 @@ jobs:
     output_mapping:
       output_repo: bumped-gosigar
     params:
-      GOPROXY: https://((broadcom_artifactory_mirrors.username)):((broadcom_artifactory_mirrors.password))@((broadcom_artifactory_mirrors.goproxy)),off
-      GOSUMDB: https://(broadcom_artifactory_mirrors.gosumdb))
+      GOPROXY: ((repository_mirrors.goproxy))
+      GOSUMDB: ((repository_mirrors.gosumdb))
   - in_parallel:
     - task: test-unit
       privileged: true
