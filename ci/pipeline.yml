@@ -1,4 +1,6 @@
 ---
+vars:
+  - &worker_tag_windows windows-nimbus
 groups:
 - name: gosigar
   jobs:
@@ -26,7 +28,7 @@ jobs:
     trigger: true
   - task: test-unit
     file: gosigar/ci/tasks/test-unit-windows.yml
-    tags: [windows-nimbus]
+    tags: [*worker_tag_windows]
 
 - name: bump-deps
   plan:
@@ -39,7 +41,6 @@ jobs:
   - task: bump-deps
     file: golang-release/ci/tasks/shared/bump-deps.yml
     image: golang-release-image
-    tags: [windows-nimbus]
     input_mapping:
       input_repo: gosigar
     output_mapping:
@@ -58,7 +59,7 @@ jobs:
       file: gosigar/ci/tasks/test-unit-windows.yml
       input_mapping:
         gosigar: bumped-gosigar
-      tags: [windows-nimbus]
+      tags: [*worker_tag_windows]
   - put: gosigar
     params:
       repository: bumped-gosigar
