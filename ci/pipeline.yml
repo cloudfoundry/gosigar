@@ -46,6 +46,7 @@ jobs:
     output_mapping:
       output_repo: bumped-gosigar
     params:
+      GOOS_LIST: linux,windows
       GOPROXY: ((repository_mirrors.goproxy))
       GOSUMDB: ((repository_mirrors.gosumdb))
   - in_parallel:
