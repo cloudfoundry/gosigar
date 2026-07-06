@@ -21,14 +21,15 @@ jobs:
       file: gosigar/ci/tasks/test-unit.yml
       image: golang-release-image
 
-- name: windows-test-unit
+- name: test-unit-windows
   serial: true
   plan:
   - get: gosigar
     trigger: true
   - task: test-unit
     file: gosigar/ci/tasks/test-unit-windows.yml
-    tags: [*worker_tag_windows]
+    tags:
+      - &worker_tag_windows windows-nimbus
 
 - name: bump-deps
   plan:
@@ -60,7 +61,8 @@ jobs:
       file: gosigar/ci/tasks/test-unit-windows.yml
       input_mapping:
         gosigar: bumped-gosigar
-      tags: [*worker_tag_windows]
+      tags:
+        - *worker_tag_windows
   - put: gosigar
     params:
       repository: bumped-gosigar
@@ -72,7 +74,7 @@ jobs:
     trigger: true
     passed:
     - test-unit
-    - windows-test-unit
+    - test-unit-windows
   - put: version-semver
     params:
       bump: patch
@@ -114,6 +116,7 @@ resources:
 - name: weekly
   type: time
   source:
+    initial_version: true
     start: 3:00 -0700
     stop: 4:30 -0700
     days: [ Saturday ]
