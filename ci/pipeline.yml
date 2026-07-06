@@ -1,14 +1,4 @@
 ---
-vars:
-  - &worker_tag_windows windows-nimbus
-groups:
-- name: gosigar
-  jobs:
-  - test-unit
-  - windows-test-unit
-  - bump-deps
-  - promote
-
 jobs:
 - name: test-unit
   public: true
