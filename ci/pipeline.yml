@@ -80,7 +80,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/gosigar.git
-    branch: master
+    branch: main
     username: bosh-admin-bot
     password: ((github_read_write_token))
 
